@@ -1,16 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import AboutSection from "@/components/AboutSection";
+import StatsSection from "@/components/StatsSection";
+import ForfaitsSection from "@/components/ForfaitsSection";
+import GallerySection from "@/components/GallerySection";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import LocationSection from "@/components/LocationSection";
+import FAQSection from "@/components/FAQSection";
+import ContactSection from "@/components/ContactSection";
+import FooterSection from "@/components/FooterSection";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import ScrollToTop from "@/components/ScrollToTop";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
-  return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
-  );
-};
-
-const Index = PlaceholderIndex;
+const Index = () => (
+  <>
+    <Navbar />
+    <main>
+      <HeroSection />
+      <AboutSection />
+      <StatsSection />
+      <ForfaitsSection />
+      <GallerySection />
+      <TestimonialsSection />
+      <LocationSection />
+      <FAQSection />
+      <ContactSection />
+    </main>
+    <FooterSection />
+    <WhatsAppButton />
+    <ScrollToTop />
+  </>
+);
 
 export default Index;
