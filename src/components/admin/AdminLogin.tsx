@@ -28,10 +28,10 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
   const onSubmit = async (values: FormData) => {
     setError(null);
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: values.password }),
+        body: JSON.stringify({ action: "login", password: values.password }),
         credentials: "include",
       });
       if (res.ok) {

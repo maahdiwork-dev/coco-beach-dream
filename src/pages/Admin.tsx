@@ -10,7 +10,7 @@ export default function Admin() {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch("/api/admin/me", { credentials: "include" });
+      const res = await fetch("/api/admin/auth", { credentials: "include" });
       const body = await res.json();
       setAuthState(body.authenticated ? "authenticated" : "unauthenticated");
     } catch {

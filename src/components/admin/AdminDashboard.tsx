@@ -30,7 +30,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
+      await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "logout" }),
+      });
     } finally {
       setLoggingOut(false);
       onLogout();
