@@ -1,0 +1,78 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { z } from "zod";
+import { requireAdmin } from "../../_lib/auth";
+import { getServiceClient } from "../../_lib/supabase";
+import { logAudit } from "../../_lib/audit";
+
+const iconSlugs = ["flame", "fish", "utensils-crossed", "soup", "salad", "chef-hat"] as const;
+const categories = ["main", "side"] as const;
+
+const patchSchema = z.object({
+  display_order: z.number().int().optional(),
+  name: z.string().min(1).optional(),
+  price: z.string().min(1).optional(),
+  category: z.enum(categories).optional(),
+  highlight: z.boolean().optional(),
+  icon: z.enum(iconSlugs).nullable().optional(),
+  active: z.boolean().optional(),
+}).strict();
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireAdmin(req, res)) return;
+
+  const { id } = req.query;
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "bad_request", message: "id requis" });
+  }
+
+  const supabase = getServiceClient();
+
+  if (req.method === "PATCH") {
+    try {
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "validation_error", message: parsed.error.message });
+      }
+
+      if (Object.keys(parsed.data).length === 0) {
+        return res.status(400).json({ error: "bad_request", message: "Aucun champ à mettre à jour" });
+      }
+
+      const { data, error } = await supabase
+        .schema("coco_beach")
+        .from("supplements")
+        .update(parsed.data)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      logAudit("supplement_updated", { id, fields: Object.keys(parsed.data) }, req);
+      return res.status(200).json({ supplement: data });
+    } catch (err) {
+      console.error("[api/admin/supplements/[id] PATCH] error:", err);
+      return res.status(500).json({ error: "internal_error" });
+    }
+  }
+
+  if (req.method === "DELETE") {
+    try {
+      const { error } = await supabase
+        .schema("coco_beach")
+        .from("supplements")
+        .update({ active: false })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      logAudit("supplement_deactivated", { id }, req);
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("[api/admin/supplements/[id] DELETE] error:", err);
+      return res.status(500).json({ error: "internal_error" });
+    }
+  }
+
+  return res.status(405).json({ error: "method_not_allowed" });
+}
