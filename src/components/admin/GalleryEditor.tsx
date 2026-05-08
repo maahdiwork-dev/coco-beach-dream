@@ -49,7 +49,7 @@ function GalleryImageRow({
   const patch = async (fields: Record<string, unknown>) => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/gallery/${image.id}`, {
+      const res = await fetch(`/api/admin/gallery?id=${image.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -81,7 +81,7 @@ function GalleryImageRow({
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/admin/gallery/${image.id}`, {
+      const res = await fetch(`/api/admin/gallery?id=${image.id}`, {
         method: "DELETE",
         credentials: "include",
       });
