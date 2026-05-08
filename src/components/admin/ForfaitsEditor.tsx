@@ -25,11 +25,11 @@ import type { Forfait } from "@/hooks/useContent";
 
 const forfaitSchema = z.object({
   name_fr: z.string().min(1, "Requis"),
-  name_ar: z.string().min(1, "Requis"),
+  name_ar: z.string().optional().default(""),
   price_fr: z.string().min(1, "Requis"),
-  price_ar: z.string().min(1, "Requis"),
+  price_ar: z.string().optional().default(""),
   items_fr: z.string().min(1, "Requis"),
-  items_ar: z.string().min(1, "Requis"),
+  items_ar: z.string().optional().default(""),
   active: z.boolean(),
 });
 

@@ -25,9 +25,9 @@ import type { FaqItem } from "@/hooks/useContent";
 
 const faqSchema = z.object({
   question_fr: z.string().min(1, "Requis"),
-  question_ar: z.string().min(1, "Requis"),
+  question_ar: z.string().optional().default(""),
   answer_fr: z.string().min(1, "Requis"),
-  answer_ar: z.string().min(1, "Requis"),
+  answer_ar: z.string().optional().default(""),
   active: z.boolean(),
 });
 

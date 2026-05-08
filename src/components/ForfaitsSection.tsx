@@ -50,9 +50,7 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {packages.map((f, i) => {
-            const PackageIcon = icons[i] ?? Umbrella;
-            const premium = i === 3;
-            const popular = i === 2;
+            const PackageIcon = icons[i % icons.length] ?? Umbrella;
 
             return (
             <motion.div
@@ -60,26 +58,11 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
               initial={{ opacity: 0, y: 30 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 * i }}
-              className={`card-premium relative overflow-visible p-6 flex flex-col ${
-                premium ? "ring-2 ring-secondary" : ""
-              }`}
+              className="card-premium relative overflow-visible p-6 flex flex-col"
             >
-              {popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
-                  Populaire
-                </span>
-              )}
-              {premium && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-secondary-foreground text-xs font-bold px-3 py-1 rounded-full">
-                  Premium
-                </span>
-              )}
-
               <div className="flex flex-col items-center text-center mb-6 mt-2">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${
-                  premium ? "bg-secondary/10" : "bg-primary/10"
-                }`}>
-                  <PackageIcon className={premium ? "text-secondary" : "text-primary"} size={28} />
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-primary/10">
+                  <PackageIcon className="text-primary" size={28} />
                 </div>
                 <h3 className="font-heading font-bold text-lg mb-1">{f.name}</h3>
                 <div className="flex items-baseline gap-1">
@@ -89,7 +72,7 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
 
               <div className="flex-1 space-y-3 mb-6">
                 {f.items.map((item, itemIndex) => {
-                  const ItemIcon = itemIcons[itemIndex] ?? Star;
+                  const ItemIcon = itemIcons[itemIndex % itemIcons.length] ?? Star;
 
                   return (
                   <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -104,11 +87,7 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
                 Tout compris
               </span>
 
-              <Button
-                variant={premium ? "sand" : "ocean"}
-                className="w-full"
-                asChild
-              >
+              <Button variant="ocean" className="w-full" asChild>
                 <a href="#contact">
                   {t.nav.reserver}
                 </a>

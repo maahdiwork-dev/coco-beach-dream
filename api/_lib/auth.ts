@@ -47,14 +47,14 @@ export function setSessionCookie(res: VercelResponse, token: string): void {
   const maxAge = SESSION_TTL_MS / 1000;
   res.setHeader(
     "Set-Cookie",
-    `${COOKIE_NAME}=${token}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}; Path=/`
+    `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}; Path=/`
   );
 }
 
 export function clearSessionCookie(res: VercelResponse): void {
   res.setHeader(
     "Set-Cookie",
-    `${COOKIE_NAME}=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/`
+    `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/`
   );
 }
 
