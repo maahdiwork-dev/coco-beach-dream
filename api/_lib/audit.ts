@@ -13,16 +13,16 @@ export function logAudit(
     "unknown";
   const userAgent = req.headers["user-agent"] ?? "unknown";
 
-  getServiceClient()
-    .schema("coco_beach")
-    .from("admin_audit")
-    .insert({ action, details, ip, user_agent: userAgent })
-    .then(({ error }) => {
-      if (error) {
-        console.error("[audit] insert failed:", error.message);
-      }
-    })
-    .catch((err) => {
-      console.error("[audit] unexpected error:", err);
-    });
+  void Promise.resolve(
+    getServiceClient()
+      .schema("coco_beach")
+      .from("admin_audit")
+      .insert({ action, details, ip, user_agent: userAgent })
+  ).then(({ error }) => {
+    if (error) {
+      console.error("[audit] insert failed:", error.message);
+    }
+  }).catch((err: unknown) => {
+    console.error("[audit] unexpected error:", err);
+  });
 }

@@ -1,15 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { IncomingForm } from "formidable";
+import { IncomingForm, type File } from "formidable";
 import { readFileSync } from "fs";
 import { requireAdmin } from "../_lib/auth";
 import { getServiceClient } from "../_lib/supabase";
 import { logAudit } from "../_lib/audit";
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 const ALLOWED_MIMES = [
   "image/jpeg",
@@ -46,11 +40,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const form = new IncomingForm({ maxFileSize: 50 * 1024 * 1024 });
 
-    const [, files] = await new Promise<[ReturnType<typeof Object.entries>, Record<string, import("formidable").File[]>]>(
+    const files = await new Promise<Record<string, File[]>>(
       (resolve, reject) => {
-        form.parse(req as any, (err, fields, files) => {
+        form.parse(req as any, (err, _fields, files) => {
           if (err) reject(err);
-          else resolve([Object.entries(fields), files as Record<string, import("formidable").File[]>]);
+          else resolve(files as Record<string, File[]>);
         });
       }
     );
