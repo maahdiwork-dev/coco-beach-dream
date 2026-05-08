@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { getWhatsAppBookingLink } from "@/lib/booking";
+import { useContent } from "@/hooks/useContent";
 
 type HeroSectionProps = {
   lang: Lang;
@@ -9,8 +10,29 @@ type HeroSectionProps = {
 
 const HeroSection = ({ lang }: HeroSectionProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { data } = useContent();
   const t = content[lang];
   const waLink = getWhatsAppBookingLink(lang);
+
+  // Resolve content: prefer DB values, fall back to static content.ts
+  const heroTitle = data?.site_text[`hero_title_${lang}`] ?? t.heroTitle;
+  const heroSub = data?.site_text[`hero_sub_${lang}`] ?? t.heroSub;
+
+  // Hero video: if DB has a storage_path that looks like a full URL, use it directly.
+  // If it's a relative path (starts with /), use it as-is.
+  // If DB has a Supabase storage path (no leading /), build the public URL.
+  let videoSrc = "/assets/vip-2026/01_hero_aerial_DNlbbQhsK2V.mp4";
+  if (data?.hero_video?.storage_path) {
+    const sp = data.hero_video.storage_path;
+    if (sp.startsWith("http")) {
+      videoSrc = sp;
+    } else if (sp.startsWith("/")) {
+      videoSrc = sp;
+    } else {
+      // Supabase storage path like "uploads/123-video.mp4"
+      videoSrc = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/coco-beach-public/${sp}`;
+    }
+  }
 
   useEffect(() => {
     const video = videoRef.current;
@@ -19,7 +41,7 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
     void video.play().catch(() => {
       // Muted autoplay can still be blocked on some devices; tapping the hero retries playback.
     });
-  }, []);
+  }, [videoSrc]);
 
   const handleVideoClick = () => {
     const video = videoRef.current;
@@ -31,7 +53,7 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
     <section id="accueil" className="relative h-screen min-h-[600px] w-full overflow-hidden bg-black">
       <video
         ref={videoRef}
-        src="/assets/vip-2026/01_hero_aerial_DNlbbQhsK2V.mp4"
+        src={videoSrc}
         autoPlay
         loop
         muted
@@ -46,9 +68,9 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center text-white">
         <h1 className="max-w-5xl text-5xl font-bold leading-tight sm:text-6xl md:text-7xl">
-          {t.heroTitle}
+          {heroTitle}
         </h1>
-        <p className="mt-4 max-w-3xl text-xl font-medium md:text-2xl">{t.heroSub}</p>
+        <p className="mt-4 max-w-3xl text-xl font-medium md:text-2xl">{heroSub}</p>
         <Button variant="sand" size="xl" asChild className="mt-8">
           <a href="#contact">
             {t.nav.reserver}

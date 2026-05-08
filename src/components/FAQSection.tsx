@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { content, type Lang } from "@/data/content";
+import { useContent, type FaqItem } from "@/hooks/useContent";
 
 type FAQSectionProps = {
   lang: Lang;
@@ -15,7 +16,16 @@ type FAQSectionProps = {
 const FAQSection = ({ lang }: FAQSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
-  const faqs = content[lang].faq;
+  const { data } = useContent();
+
+  // DB data or static fallback
+  const faqs: Array<{ q: string; a: string }> =
+    data?.faq && data.faq.length > 0
+      ? data.faq.map((f: FaqItem) => ({
+          q: lang === "ar" ? f.question_ar : f.question_fr,
+          a: lang === "ar" ? f.answer_ar : f.answer_fr,
+        }))
+      : content[lang].faq;
 
   return (
     <section className="section-padding" ref={ref}>

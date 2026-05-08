@@ -4,6 +4,7 @@ import { Umbrella, Home, Star, Ship, Car, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { getWhatsAppBookingLink } from "@/lib/booking";
+import { useContent, type Forfait } from "@/hooks/useContent";
 
 const icons = [Umbrella, Home, Home, Star];
 const itemIcons = [Ship, Car, UtensilsCrossed, Star];
@@ -15,8 +16,22 @@ type ForfaitsSectionProps = {
 const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const { data } = useContent();
   const t = content[lang];
   const waLink = getWhatsAppBookingLink(lang);
+
+  const forfaitsTitle = data?.site_text[`forfaits_title_${lang}`] ?? t.forfaitsTitle;
+  const forfaitsNote = data?.site_text[`forfaits_note_${lang}`] ?? t.forfaitsNote;
+
+  // Build display packages from DB data or fall back to static content.ts
+  const packages: Array<{ name: string; price: string; items: string[] }> =
+    data?.forfaits && data.forfaits.length > 0
+      ? data.forfaits.map((f: Forfait) => ({
+          name: lang === "ar" ? f.name_ar : f.name_fr,
+          price: lang === "ar" ? f.price_ar : f.price_fr,
+          items: lang === "ar" ? (f.items_ar ?? []) : (f.items_fr ?? []),
+        }))
+      : t.packages.map((p) => ({ name: p.name, price: p.price, items: [...p.items] }));
 
   return (
     <section id="forfaits" className="section-padding" ref={ref}>
@@ -27,14 +42,14 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="section-title">{t.forfaitsTitle}</h2>
+          <h2 className="section-title">{forfaitsTitle}</h2>
           <p className="section-subtitle">
-            {t.forfaitsNote}
+            {forfaitsNote}
           </p>
         </motion.div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {t.packages.map((f, i) => {
+          {packages.map((f, i) => {
             const PackageIcon = icons[i] ?? Umbrella;
             const premium = i === 3;
             const popular = i === 2;
