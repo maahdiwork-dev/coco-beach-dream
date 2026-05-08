@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,12 +8,14 @@ import SupplementsEditor from "./SupplementsEditor";
 import FaqEditor from "./FaqEditor";
 import SiteTextEditor from "./SiteTextEditor";
 import HeroVideoUploader from "./HeroVideoUploader";
+import GalleryEditor from "./GalleryEditor";
 import { useContent } from "@/hooks/useContent";
 
 const TABS = [
   { value: "forfaits", label: "Forfaits" },
   { value: "supplements", label: "Suppléments" },
   { value: "faq", label: "FAQ" },
+  { value: "galerie", label: "Galerie" },
   { value: "site-text", label: "Texte du site" },
   { value: "hero-video", label: "Vidéo Hero" },
 ] as const;
@@ -26,6 +28,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("forfaits");
   const { data: contentData } = useContent();
+
+  useEffect(() => {
+    document.title = "Coco Beach — Tableau de bord administrateur";
+    return () => { document.title = "VIP Coco Beach — Restaurant & Plage Privée à Ghar el Melh, Bizerte"; };
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -62,7 +69,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             ) : (
               <LogOut className="mr-2 h-4 w-4" />
             )}
-            Déconnexion
+            Se déconnecter
           </Button>
         </div>
       </header>
@@ -102,6 +109,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
           <TabsContent value="faq">
             <FaqEditor />
+          </TabsContent>
+
+          <TabsContent value="galerie">
+            <GalleryEditor />
           </TabsContent>
 
           <TabsContent value="site-text">

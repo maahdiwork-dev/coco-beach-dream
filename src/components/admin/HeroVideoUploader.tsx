@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 import { Loader2, Upload, CheckCircle } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -19,7 +20,6 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const activePath = uploadedPath ?? currentStoragePath;
@@ -29,7 +29,6 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
     if (!file) return;
 
     setUploading(true);
-    setMsg(null);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -44,13 +43,13 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
       if (res.ok) {
         const body = await res.json();
         setUploadedPath(body.storage_path);
-        setMsg("Fichier uploadé. Cliquez sur Enregistrer pour l'activer.");
+        toast("Fichier chargé. Cliquez sur Enregistrer pour l'activer.");
       } else {
         const body = await res.json().catch(() => ({}));
-        setMsg(body.message ?? "Erreur lors de l'upload");
+        toast(body.message ?? "Erreur lors du téléversement", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setMsg("Erreur réseau lors de l'upload");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setUploading(false);
     }
@@ -59,7 +58,6 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
   const handleSave = async () => {
     if (!uploadedPath) return;
     setSaving(true);
-    setMsg(null);
 
     try {
       const res = await fetch("/api/admin/hero-video", {
@@ -70,14 +68,14 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
       });
 
       if (res.ok) {
-        setMsg("Vidéo activée. Le changement prend effet immédiatement sur le site.");
+        toast("Vidéo activée — changement immédiat sur le site");
         setUploadedPath(null);
       } else {
         const body = await res.json().catch(() => ({}));
-        setMsg(body.message ?? "Erreur lors de la sauvegarde");
+        toast(body.message ?? "Erreur lors de la sauvegarde", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setMsg("Erreur réseau");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setSaving(false);
     }
@@ -85,6 +83,11 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
 
   return (
     <div className="space-y-6">
+      {/* Help text */}
+      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+        La vidéo affichée en haut de la page d'accueil. Téléversez un fichier MP4 (max 50 MB). Le changement est instantané sur le site.
+      </div>
+
       <h3 className="font-heading font-semibold text-lg">Vidéo Hero</h3>
 
       {activePath && (
@@ -115,35 +118,25 @@ export default function HeroVideoUploader({ currentStoragePath }: HeroVideoUploa
           type="button"
           variant="outline"
           onClick={() => fileRef.current?.click()}
-          disabled={uploading}
+          disabled={uploading || saving}
         >
           {uploading ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Upload en cours...</>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Téléversement...</>
           ) : (
-            <><Upload className="mr-2 h-4 w-4" /> Choisir une vidéo MP4/WebM</>
+            <><Upload className="mr-2 h-4 w-4" />Choisir une vidéo MP4/WebM</>
           )}
         </Button>
 
         {uploadedPath && (
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enregistrement...</>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enregistrement...</>
             ) : (
-              <><CheckCircle className="mr-2 h-4 w-4" /> Enregistrer comme vidéo active</>
+              <><CheckCircle className="mr-2 h-4 w-4" />Enregistrer comme vidéo active</>
             )}
           </Button>
         )}
       </div>
-
-      {msg && (
-        <div className={`rounded-lg p-3 text-sm ${
-          msg.includes("immédiatement") || msg.includes("uploadé")
-            ? "bg-green-50 text-green-700 border border-green-200"
-            : "bg-destructive/10 text-destructive border border-destructive/20"
-        }`}>
-          {msg}
-        </div>
-      )}
 
       <p className="text-xs text-muted-foreground">
         Le changement prend effet immédiatement sur le site une fois enregistré. Format recommandé : MP4 H.264, max 50 Mo.

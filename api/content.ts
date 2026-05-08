@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const supabase = getAnonClient();
 
-    const [siteTextRes, forfaitsRes, supplementsRes, faqRes, heroVideoRes] =
+    const [siteTextRes, forfaitsRes, supplementsRes, faqRes, heroVideoRes, galleryRes] =
       await Promise.all([
         supabase.schema("coco_beach").from("site_text").select("key, value"),
         supabase
@@ -38,6 +38,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq("active", true)
           .limit(1)
           .maybeSingle(),
+        supabase
+          .schema("coco_beach")
+          .from("gallery_images")
+          .select("id, storage_path, alt_fr, alt_ar, display_order")
+          .eq("active", true)
+          .order("display_order"),
       ]);
 
     if (siteTextRes.error) throw siteTextRes.error;
@@ -45,6 +51,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (supplementsRes.error) throw supplementsRes.error;
     if (faqRes.error) throw faqRes.error;
     if (heroVideoRes.error) throw heroVideoRes.error;
+    // gallery errors are non-fatal — fall back to empty array so public site still loads
+    if (galleryRes.error) {
+      console.warn("[api/content] gallery_images error (non-fatal):", galleryRes.error.message);
+    }
 
     // Build site_text map
     const site_text: Record<string, string> = {};
@@ -63,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       supplements: supplementsRes.data ?? [],
       faq: faqRes.data ?? [],
       hero_video: heroVideoRes.data ?? null,
+      gallery_images: galleryRes.data ?? [],
     });
   } catch (err) {
     console.error("[api/content] error:", err);

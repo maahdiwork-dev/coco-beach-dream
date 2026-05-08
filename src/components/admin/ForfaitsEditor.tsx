@@ -7,7 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Plus, Save, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { Forfait } from "@/hooks/useContent";
 
 const forfaitSchema = z.object({
@@ -25,7 +38,6 @@ type FormData = z.infer<typeof forfaitSchema>;
 function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
 
   const {
     register,
@@ -50,7 +62,6 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
 
   const onSubmit = async (values: FormData) => {
     setSaving(true);
-    setMsg(null);
     try {
       const res = await fetch(`/api/admin/forfaits/${forfait.id}`, {
         method: "PATCH",
@@ -67,16 +78,35 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
         }),
       });
       if (res.ok) {
-        setMsg("Sauvegardé");
+        toast("Forfait modifié");
         onUpdated();
       } else {
         const body = await res.json().catch(() => ({}));
-        setMsg(body.message ?? "Erreur lors de la sauvegarde");
+        toast(body.message ?? "Erreur lors de la sauvegarde", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setMsg("Erreur réseau");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    try {
+      const res = await fetch(`/api/admin/forfaits/${forfait.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ active: false }),
+      });
+      if (res.ok) {
+        toast("Forfait désactivé");
+        onUpdated();
+      } else {
+        toast("Erreur lors de la désactivation", { style: { background: "var(--destructive)", color: "#fff" } });
+      }
+    } catch {
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     }
   };
 
@@ -109,12 +139,12 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
             </div>
             <div className="space-y-1">
               <Label>Prix (FR)</Label>
-              <Input {...register("price_fr")} placeholder="ex: 70 DT / pers." />
+              <Input {...register("price_fr")} inputMode="decimal" placeholder="ex: 70 DT / pers." />
               {errors.price_fr && <p className="text-xs text-destructive">{errors.price_fr.message}</p>}
             </div>
             <div className="space-y-1">
               <Label>Prix (AR)</Label>
-              <Input {...register("price_ar")} dir="rtl" placeholder="ex: 70 د / شخص" />
+              <Input {...register("price_ar")} dir="rtl" inputMode="decimal" placeholder="ex: 70 د / شخص" />
               {errors.price_ar && <p className="text-xs text-destructive">{errors.price_ar.message}</p>}
             </div>
             <div className="space-y-1">
@@ -138,16 +168,37 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
             <Label htmlFor={`active-${forfait.id}`}>Actif sur le site</Label>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button type="submit" size="sm" disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Sauvegarder
+              {saving ? "Sauvegarde..." : "Sauvegarder"}
             </Button>
-            {msg && (
-              <span className={`text-sm ${msg === "Sauvegardé" ? "text-green-600" : "text-destructive"}`}>
-                {msg}
-              </span>
-            )}
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Désactiver
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Désactiver ce forfait ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir désactiver ce forfait ? Cette action est réversible mais l'élément sera caché du site immédiatement.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeactivate}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Désactiver
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </form>
       )}
@@ -158,10 +209,8 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
 export default function ForfaitsEditor() {
   const [forfaits, setForfaits] = useState<Forfait[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [addMsg, setAddMsg] = useState<string | null>(null);
 
   const {
     register: addReg,
@@ -180,7 +229,7 @@ export default function ForfaitsEditor() {
       const body = await res.json();
       setForfaits(body.forfaits ?? []);
     } catch {
-      setError("Impossible de charger les forfaits");
+      toast("Impossible de charger les forfaits", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setLoading(false);
     }
@@ -190,7 +239,6 @@ export default function ForfaitsEditor() {
 
   const onAdd = async (values: FormData) => {
     setAdding(true);
-    setAddMsg(null);
     try {
       const res = await fetch("/api/admin/forfaits", {
         method: "POST",
@@ -210,24 +258,42 @@ export default function ForfaitsEditor() {
       if (res.ok) {
         addReset();
         setShowAdd(false);
-        setAddMsg(null);
+        toast("Forfait ajouté");
         loadForfaits();
       } else {
         const body = await res.json().catch(() => ({}));
-        setAddMsg(body.message ?? "Erreur lors de l'ajout");
+        toast(body.message ?? "Erreur lors de l'ajout", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setAddMsg("Erreur réseau");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setAdding(false);
     }
   };
 
-  if (loading) return <div className="py-8 text-center text-muted-foreground">Chargement...</div>;
-  if (error) return <div className="py-4 text-destructive">{error}</div>;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+          Modifiez ici les noms, prix et inclus de vos forfaits. Les changements sont visibles immédiatement sur le site. Décocher &lsquo;Actif&rsquo; cache le forfait sans le supprimer.
+        </div>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="card-premium p-4 flex items-center justify-between">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-6 w-20" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
+      {/* Help text */}
+      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+        Modifiez ici les noms, prix et inclus de vos forfaits. Les changements sont visibles immédiatement sur le site. Décocher &lsquo;Actif&rsquo; cache le forfait sans le supprimer.
+      </div>
+
       <div className="flex items-center justify-between">
         <h3 className="font-heading font-semibold text-lg">Forfaits ({forfaits.length})</h3>
         <Button size="sm" variant="outline" onClick={() => setShowAdd((s) => !s)}>
@@ -235,6 +301,16 @@ export default function ForfaitsEditor() {
           Nouveau forfait
         </Button>
       </div>
+
+      {forfaits.length === 0 && !showAdd && (
+        <div className="flex flex-col items-center justify-center py-12 space-y-3 text-center text-muted-foreground">
+          <p>Aucun élément. Cliquez sur &lsquo;Ajouter&rsquo; pour commencer.</p>
+          <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter
+          </Button>
+        </div>
+      )}
 
       {showAdd && (
         <div className="card-premium p-4 space-y-4 border-2 border-primary/20">
@@ -253,12 +329,12 @@ export default function ForfaitsEditor() {
               </div>
               <div className="space-y-1">
                 <Label>Prix (FR)</Label>
-                <Input {...addReg("price_fr")} />
+                <Input {...addReg("price_fr")} inputMode="decimal" />
                 {addErrors.price_fr && <p className="text-xs text-destructive">{addErrors.price_fr.message}</p>}
               </div>
               <div className="space-y-1">
                 <Label>Prix (AR)</Label>
-                <Input {...addReg("price_ar")} dir="rtl" />
+                <Input {...addReg("price_ar")} dir="rtl" inputMode="decimal" />
                 {addErrors.price_ar && <p className="text-xs text-destructive">{addErrors.price_ar.message}</p>}
               </div>
               <div className="space-y-1">
@@ -275,10 +351,9 @@ export default function ForfaitsEditor() {
             <div className="flex items-center gap-3">
               <Button type="submit" size="sm" disabled={adding}>
                 {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                Ajouter
+                {adding ? "Ajout..." : "Ajouter"}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowAdd(false)}>Annuler</Button>
-              {addMsg && <span className="text-sm text-destructive">{addMsg}</span>}
             </div>
           </form>
         </div>

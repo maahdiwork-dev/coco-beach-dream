@@ -6,7 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import type { Supplement } from "@/hooks/useContent";
 
@@ -33,7 +46,6 @@ function SupplementRow({
   onDeleted: () => void;
 }) {
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(supplementSchema),
     defaultValues: {
@@ -51,7 +63,6 @@ function SupplementRow({
 
   const onSubmit = async (values: FormData) => {
     setSaving(true);
-    setMsg(null);
     try {
       const res = await fetch(`/api/admin/supplements/${supplement.id}`, {
         method: "PATCH",
@@ -63,29 +74,33 @@ function SupplementRow({
         }),
       });
       if (res.ok) {
-        setMsg("Sauvegardé");
+        toast("Supplément modifié");
         onUpdated();
       } else {
         const body = await res.json().catch(() => ({}));
-        setMsg(body.message ?? "Erreur");
+        toast(body.message ?? "Erreur", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setMsg("Erreur réseau");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Désactiver "${supplement.name}" ?`)) return;
     try {
-      await fetch(`/api/admin/supplements/${supplement.id}`, {
+      const res = await fetch(`/api/admin/supplements/${supplement.id}`, {
         method: "DELETE",
         credentials: "include",
       });
-      onDeleted();
+      if (res.ok) {
+        toast("Supplément supprimé");
+        onDeleted();
+      } else {
+        toast("Erreur lors de la suppression", { style: { background: "var(--destructive)", color: "#fff" } });
+      }
     } catch {
-      // ignore
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     }
   };
 
@@ -99,7 +114,7 @@ function SupplementRow({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Prix (DT)</Label>
-          <Input {...register("price")} />
+          <Input {...register("price")} inputMode="decimal" />
           {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
         </div>
       </div>
@@ -152,14 +167,33 @@ function SupplementRow({
       <div className="flex items-center gap-2">
         <Button type="submit" size="sm" disabled={saving}>
           {saving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Save className="mr-2 h-3 w-3" />}
-          Sauvegarder
+          {saving ? "Sauvegarde..." : "Sauvegarder"}
         </Button>
-        <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDelete}>
-          <Trash2 className="h-3 w-3" />
-        </Button>
-        {msg && (
-          <span className={`text-xs ${msg === "Sauvegardé" ? "text-green-600" : "text-destructive"}`}>{msg}</span>
-        )}
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer ce supplément ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer ce supplément ? Cette action est réversible mais l'élément sera caché du site immédiatement.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </form>
   );
@@ -170,7 +204,6 @@ export default function SupplementsEditor() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [addMsg, setAddMsg] = useState<string | null>(null);
 
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(supplementSchema),
@@ -183,6 +216,8 @@ export default function SupplementsEditor() {
       const res = await fetch("/api/admin/supplements", { credentials: "include" });
       const body = await res.json();
       setSupplements(body.supplements ?? []);
+    } catch {
+      toast("Impossible de charger les suppléments", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setLoading(false);
     }
@@ -192,7 +227,6 @@ export default function SupplementsEditor() {
 
   const onAdd = async (values: FormData) => {
     setAdding(true);
-    setAddMsg(null);
     try {
       const res = await fetch("/api/admin/supplements", {
         method: "POST",
@@ -203,25 +237,48 @@ export default function SupplementsEditor() {
       if (res.ok) {
         reset({ category: "main", highlight: false, icon: "none", active: true });
         setShowAdd(false);
+        toast("Supplément ajouté");
         load();
       } else {
         const body = await res.json().catch(() => ({}));
-        setAddMsg(body.message ?? "Erreur");
+        toast(body.message ?? "Erreur", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setAddMsg("Erreur réseau");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setAdding(false);
     }
   };
 
-  if (loading) return <div className="py-8 text-center text-muted-foreground">Chargement...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+          Gérez les plats à la carte. Cliquez sur &lsquo;Ajouter&rsquo; pour un nouveau plat. L'icône flame met le plat en avant.
+        </div>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="card-premium p-4 space-y-3">
+            <div className="grid sm:grid-cols-3 gap-3">
+              <Skeleton className="sm:col-span-2 h-9" />
+              <Skeleton className="h-9" />
+            </div>
+            <Skeleton className="h-9 w-32" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const mains = supplements.filter((s) => s.category === "main");
   const sides = supplements.filter((s) => s.category === "side");
 
   return (
     <div className="space-y-4">
+      {/* Help text */}
+      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+        Gérez les plats à la carte. Cliquez sur &lsquo;Ajouter&rsquo; pour un nouveau plat. L&rsquo;icône flame met le plat en avant.
+      </div>
+
       <div className="flex items-center justify-between">
         <h3 className="font-heading font-semibold text-lg">Suppléments ({supplements.length})</h3>
         <Button size="sm" variant="outline" onClick={() => setShowAdd((s) => !s)}>
@@ -229,6 +286,16 @@ export default function SupplementsEditor() {
           Nouveau
         </Button>
       </div>
+
+      {supplements.length === 0 && !showAdd && (
+        <div className="flex flex-col items-center justify-center py-12 space-y-3 text-center text-muted-foreground">
+          <p>Aucun élément. Cliquez sur &lsquo;Ajouter&rsquo; pour commencer.</p>
+          <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter
+          </Button>
+        </div>
+      )}
 
       {showAdd && (
         <div className="card-premium p-4 space-y-4 border-2 border-primary/20">
@@ -242,7 +309,7 @@ export default function SupplementsEditor() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Prix (DT)</Label>
-                <Input {...register("price")} />
+                <Input {...register("price")} inputMode="decimal" />
                 {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
               </div>
             </div>
@@ -270,10 +337,9 @@ export default function SupplementsEditor() {
             <div className="flex items-center gap-3">
               <Button type="submit" size="sm" disabled={adding}>
                 {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                Ajouter
+                {adding ? "Ajout..." : "Ajouter"}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowAdd(false)}>Annuler</Button>
-              {addMsg && <span className="text-sm text-destructive">{addMsg}</span>}
             </div>
           </form>
         </div>

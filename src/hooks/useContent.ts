@@ -36,12 +36,23 @@ export interface FaqItem {
   active: boolean;
 }
 
+export interface GalleryImage {
+  id: string;
+  storage_path: string;
+  public_url?: string | null;
+  alt_fr: string;
+  alt_ar: string;
+  display_order: number;
+  active?: boolean;
+}
+
 export interface ContentPayload {
   site_text: Record<string, string>;
   forfaits: Forfait[];
   supplements: Supplement[];
   faq: FaqItem[];
   hero_video: { storage_path: string } | null;
+  gallery_images: GalleryImage[];
 }
 
 async function fetchContent(): Promise<ContentPayload> {

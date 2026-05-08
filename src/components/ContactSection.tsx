@@ -2,8 +2,9 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { MapPin, Mail, Phone, Clock, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useForm } from "@formspree/react";
+import { useForm as useFormspree } from "@formspree/react";
 import { content, type Lang } from "@/data/content";
+import { useContent } from "@/hooks/useContent";
 
 type ContactSectionProps = {
   lang: Lang;
@@ -13,7 +14,19 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const t = content[lang];
-  const [fsState, fsSend] = useForm("xaqaobew");
+  const { data: contentData } = useContent();
+
+  // Runtime Formspree ID — falls back to env var for backward compat
+  const formspreeId =
+    contentData?.site_text?.formspree_id ||
+    (import.meta.env.VITE_FORMSPREE_ID !== "YOUR_FORM_ID"
+      ? import.meta.env.VITE_FORMSPREE_ID
+      : "");
+
+  // Runtime WhatsApp number
+  const whatsappNumber = contentData?.site_text?.whatsapp_number ?? "";
+
+  const [fsState, fsSend] = useFormspree(formspreeId || "PLACEHOLDER_NEVER_SENT");
   const [form, setForm] = useState({
     name: "", phone: "", date: "", people: "", forfait: "", message: "",
   });
@@ -28,15 +41,20 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
       form.forfait && `🏖️ Forfait : ${form.forfait}`,
       form.message && `💬 Message : ${form.message}`,
     ].filter(Boolean).join("\n");
-    return "https://wa.me/21656530516?text=" + encodeURIComponent(lines);
+    const cleanNumber = whatsappNumber.replace(/[^0-9+]/g, "");
+    const number = cleanNumber || "21656530516";
+    return `https://wa.me/${number}?text=${encodeURIComponent(lines)}`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formspreeId) return;
     fsSend({ nom: form.name, téléphone: form.phone, date: form.date, personnes: form.people, forfait: form.forfait, message: form.message });
   };
 
   const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+
+  const formDisabled = !formspreeId;
 
   return (
     <section id="contact" className="section-padding bg-warm-cream" ref={ref}>
@@ -96,7 +114,24 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="lg:col-span-3"
           >
-            {fsState.succeeded ? (
+            {formDisabled ? (
+              <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[200px]">
+                <p className="text-muted-foreground">
+                  Formulaire de contact bientôt disponible.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Pour réserver, utilisez le bouton WhatsApp ci-dessous.
+                </p>
+                <Button
+                  variant="sand"
+                  size="lg"
+                  type="button"
+                  onClick={() => window.open(buildWaLink(), "_blank", "noopener,noreferrer")}
+                >
+                  {t.nav.reserver}
+                </Button>
+              </div>
+            ) : fsState.succeeded ? (
               <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
                 <div className="text-4xl">✅</div>
                 <h3 className="font-heading text-xl font-bold text-primary">Demande envoyée !</h3>
@@ -106,94 +141,96 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                 </Button>
               </div>
             ) : (
-            <form onSubmit={handleSubmit} className="card-premium p-6 md:p-8 space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">Nom complet</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={100}
-                    value={form.name}
-                    onChange={(e) => update("name", e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+              <form onSubmit={handleSubmit} className="card-premium p-6 md:p-8 space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Nom complet</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={100}
+                      value={form.name}
+                      onChange={(e) => update("name", e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Téléphone</label>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      required
+                      maxLength={20}
+                      value={form.phone}
+                      onChange={(e) => update("phone", e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Date souhaitée</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.date}
+                      onChange={(e) => update("date", e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Nombre de personnes</label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      required
+                      min={1}
+                      max={50}
+                      value={form.people}
+                      onChange={(e) => update("people", e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">Téléphone</label>
-                  <input
-                    type="tel"
+                  <label className="text-sm font-medium text-foreground mb-1 block">Forfait</label>
+                  <select
                     required
-                    maxLength={20}
-                    value={form.phone}
-                    onChange={(e) => update("phone", e.target.value)}
+                    value={form.forfait}
+                    onChange={(e) => update("forfait", e.target.value)}
                     className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">Date souhaitée</label>
-                  <input
-                    type="date"
-                    required
-                    value={form.date}
-                    onChange={(e) => update("date", e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                  >
+                    <option value="">Choisir un forfait</option>
+                    {t.packages.map((packageItem) => (
+                      <option key={packageItem.name} value={packageItem.name}>
+                        {packageItem.name} — {packageItem.price}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">Nombre de personnes</label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    max={50}
-                    value={form.people}
-                    onChange={(e) => update("people", e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  <label className="text-sm font-medium text-foreground mb-1 block">Message (optionnel)</label>
+                  <textarea
+                    maxLength={1000}
+                    rows={3}
+                    value={form.message}
+                    onChange={(e) => update("message", e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Forfait</label>
-                <select
-                  required
-                  value={form.forfait}
-                  onChange={(e) => update("forfait", e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                <Button variant="ocean" size="lg" type="submit" className="w-full" disabled={fsState.submitting}>
+                  {fsState.submitting ? "Envoi en cours…" : "Envoyer la Demande"}
+                </Button>
+                <Button
+                  variant="sand"
+                  size="lg"
+                  type="button"
+                  className="w-full"
+                  onClick={() => window.open(buildWaLink(), "_blank", "noopener,noreferrer")}
                 >
-                  <option value="">Choisir un forfait</option>
-                  {t.packages.map((packageItem) => (
-                    <option key={packageItem.name} value={packageItem.name}>
-                      {packageItem.name} — {packageItem.price}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Message (optionnel)</label>
-                <textarea
-                  maxLength={1000}
-                  rows={3}
-                  value={form.message}
-                  onChange={(e) => update("message", e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                />
-              </div>
-              <Button variant="ocean" size="lg" type="submit" className="w-full" disabled={fsState.submitting}>
-                {fsState.submitting ? "Envoi en cours…" : "Envoyer la Demande"}
-              </Button>
-              <Button
-                variant="sand"
-                size="lg"
-                type="button"
-                className="w-full"
-                onClick={() => window.open(buildWaLink(), "_blank", "noopener,noreferrer")}
-              >
-                {t.nav.reserver}
-              </Button>
-            </form>
+                  {t.nav.reserver}
+                </Button>
+              </form>
             )}
           </motion.div>
         </div>

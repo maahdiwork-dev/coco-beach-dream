@@ -13,15 +13,26 @@ import cabaneLoungersWebp from "@/assets/vip-2026/07_cabane_DMpc_2.webp";
 import cabaneAerial from "@/assets/vip-2026/07_cabane_DMpc_1.jpg";
 import cabaneAerialWebp from "@/assets/vip-2026/07_cabane_DMpc_1.webp";
 import type { Lang } from "@/data/content";
+import { useContent } from "@/hooks/useContent";
 
-const images = [
-  { id: "restaurant", src: g1, alt: "Restaurant en bord de mer", w: 800, h: 600 },
-  { id: "walkway", src: romanticWalkway, webp: romanticWalkwayWebp, alt: "Passerelle et cabane VIP Coco Beach en lumière de coucher de soleil", w: 1440, h: 1081 },
-  { id: "food", src: foodShrimpPasta, webp: foodShrimpPastaWebp, alt: "Plat de pâtes aux crevettes servi à VIP Coco Beach", w: 1026, h: 1367 },
-  { id: "boat", src: boatCompressed, webp: boatCompressedWebp, alt: "Bateau traditionnel en mer turquoise vers VIP Coco Beach", w: 800, h: 600 },
-  { id: "loungers", src: cabaneLoungers, webp: cabaneLoungersWebp, alt: "Cabanes et transats VIP Coco Beach au bord de l'eau", w: 1440, h: 1085 },
-  { id: "aerial", src: cabaneAerial, webp: cabaneAerialWebp, alt: "Vue aérienne de VIP Coco Beach avec arche en coeur", w: 1440, h: 1081 },
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+
+// Static fallback images — used when gallery_images table is empty or unavailable
+const STATIC_IMAGES = [
+  { id: "restaurant", src: g1, webp: undefined as string | undefined, alt: "Restaurant en bord de mer" },
+  { id: "walkway", src: romanticWalkway, webp: romanticWalkwayWebp, alt: "Passerelle et cabane VIP Coco Beach en lumière de coucher de soleil" },
+  { id: "food", src: foodShrimpPasta, webp: foodShrimpPastaWebp, alt: "Plat de pâtes aux crevettes servi à VIP Coco Beach" },
+  { id: "boat", src: boatCompressed, webp: boatCompressedWebp, alt: "Bateau traditionnel en mer turquoise vers VIP Coco Beach" },
+  { id: "loungers", src: cabaneLoungers, webp: cabaneLoungersWebp, alt: "Cabanes et transats VIP Coco Beach au bord de l'eau" },
+  { id: "aerial", src: cabaneAerial, webp: cabaneAerialWebp, alt: "Vue aérienne de VIP Coco Beach avec arche en coeur" },
 ];
+
+function buildImageUrl(storagePath: string): string {
+  if (!storagePath) return "";
+  if (storagePath.startsWith("http")) return storagePath;
+  if (storagePath.startsWith("/")) return storagePath;
+  return `${SUPABASE_URL}/storage/v1/object/public/coco-beach-public/${storagePath}`;
+}
 
 type GallerySectionProps = {
   lang: Lang;
@@ -31,10 +42,23 @@ const GallerySection = ({ lang: _lang }: GallerySectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const { data: contentData } = useContent();
+
+  // Build display list: prefer DB-driven images, fall back to static
+  const dbImages = contentData?.gallery_images ?? [];
+  const displayImages =
+    dbImages.length > 0
+      ? dbImages.map((img) => ({
+          id: img.id,
+          src: img.public_url ?? buildImageUrl(img.storage_path),
+          webp: undefined as string | undefined,
+          alt: img.alt_fr || "Photo VIP Coco Beach",
+        }))
+      : STATIC_IMAGES;
 
   const navigate = (dir: number) => {
     if (lightbox === null) return;
-    setLightbox((lightbox + dir + images.length) % images.length);
+    setLightbox((lightbox + dir + displayImages.length) % displayImages.length);
   };
 
   return (
@@ -52,7 +76,7 @@ const GallerySection = ({ lang: _lang }: GallerySectionProps) => {
           </motion.div>
 
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-            {images.map((img, i) => (
+            {displayImages.map((img, i) => (
               <motion.button
                 key={img.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -67,8 +91,6 @@ const GallerySection = ({ lang: _lang }: GallerySectionProps) => {
                     src={img.src}
                     alt={img.alt}
                     loading="lazy"
-                    width={img.w}
-                    height={img.h}
                     className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </picture>
@@ -109,10 +131,12 @@ const GallerySection = ({ lang: _lang }: GallerySectionProps) => {
             <ChevronRight size={24} />
           </button>
           <picture>
-            {images[lightbox].webp && <source srcSet={images[lightbox].webp} type="image/webp" />}
+            {displayImages[lightbox].webp && (
+              <source srcSet={displayImages[lightbox].webp} type="image/webp" />
+            )}
             <img
-              src={images[lightbox].src}
-              alt={images[lightbox].alt}
+              src={displayImages[lightbox].src}
+              alt={displayImages[lightbox].alt}
               loading="lazy"
               className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain"
               onClick={(e) => e.stopPropagation()}

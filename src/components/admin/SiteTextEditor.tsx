@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/sonner";
 import { Loader2, Save } from "lucide-react";
 
 type Entry = { key: string; value: string };
@@ -51,7 +53,6 @@ export default function SiteTextEditor() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -60,6 +61,8 @@ export default function SiteTextEditor() {
         const body = await res.json();
         const map: Record<string, string> = body.site_text ?? {};
         setEntries(Object.entries(map).map(([key, value]) => ({ key, value })));
+      } catch {
+        toast("Impossible de charger les textes", { style: { background: "var(--destructive)", color: "#fff" } });
       } finally {
         setLoading(false);
       }
@@ -72,7 +75,6 @@ export default function SiteTextEditor() {
 
   const handleSave = async () => {
     setSaving(true);
-    setMsg(null);
     try {
       const res = await fetch("/api/admin/site-text", {
         method: "PUT",
@@ -81,43 +83,78 @@ export default function SiteTextEditor() {
         body: JSON.stringify({ entries }),
       });
       if (res.ok) {
-        setMsg("Sauvegardé avec succès");
+        toast("Enregistré avec succès");
       } else {
         const body = await res.json().catch(() => ({}));
-        setMsg(body.message ?? "Erreur lors de la sauvegarde");
+        toast(body.message ?? "Erreur lors de la sauvegarde", { style: { background: "var(--destructive)", color: "#fff" } });
       }
     } catch {
-      setMsg("Erreur réseau");
+      toast("Erreur de connexion", { style: { background: "var(--destructive)", color: "#fff" } });
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="py-8 text-center text-muted-foreground">Chargement...</div>;
-
-  // Group by FR/AR pairs
-  const frKeys = entries.filter((e) => e.key.endsWith("_fr") || (!e.key.endsWith("_ar") && e.key !== "whatsapp_number" && e.key !== "formspree_id"));
-  const specialKeys = entries.filter((e) => e.key === "whatsapp_number" || e.key === "formspree_id");
-  const allKeys = entries;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+          Tous les textes du site (titre, sous-titre, avertissement, etc.). Modifiez en place et cliquez &lsquo;Enregistrer tout&rsquo;.
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="space-y-1">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="relative">
+      {/* Help text */}
+      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800 mb-4">
+        Tous les textes du site (titre, sous-titre, avertissement, etc.). Modifiez en place et cliquez &lsquo;Enregistrer tout&rsquo;.
+      </div>
+
+      {/* Desktop sticky save — top */}
+      <div className="hidden sm:flex items-center justify-between mb-4 sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border pb-3">
         <h3 className="font-heading font-semibold text-lg">Textes du site</h3>
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Tout sauvegarder
+          {saving ? "Enregistrement..." : "Enregistrer tout"}
         </Button>
       </div>
 
-      {msg && (
-        <div className={`rounded-lg p-3 text-sm ${msg.includes("succès") ? "bg-green-50 text-green-700 border border-green-200" : "bg-destructive/10 text-destructive border border-destructive/20"}`}>
-          {msg}
-        </div>
-      )}
+      {/* Mobile heading (no sticky) */}
+      <div className="sm:hidden mb-4">
+        <h3 className="font-heading font-semibold text-lg">Textes du site</h3>
+      </div>
 
-      <div className="space-y-4">
-        {allKeys.map(({ key, value }) => {
+      <div className="space-y-4 pb-24 sm:pb-4">
+        {/* Special fields first: whatsapp_number, formspree_id */}
+        {entries.filter((e) => e.key === "whatsapp_number" || e.key === "formspree_id").map(({ key, value }) => (
+          <div key={key} className="space-y-1 rounded-lg bg-amber-50 border border-amber-200 p-3">
+            <Label className="text-xs font-semibold text-amber-700">{KEY_LABELS[key] ?? key}</Label>
+            <Input
+              value={value}
+              onChange={(e) => handleChange(key, e.target.value)}
+              inputMode={key === "whatsapp_number" ? "tel" : "text"}
+              placeholder={key === "whatsapp_number" ? "+21656530516" : "Formspree form ID"}
+            />
+            <p className="text-xs text-amber-600">
+              {key === "whatsapp_number"
+                ? "Format international avec indicatif pays. Laissez vide pour masquer le bouton WhatsApp."
+                : "L'ID de votre formulaire Formspree. Laissez vide pour afficher un message 'formulaire à venir'."}
+            </p>
+          </div>
+        ))}
+
+        {/* All other fields */}
+        {entries.filter((e) => e.key !== "whatsapp_number" && e.key !== "formspree_id").map(({ key, value }) => {
           const label = KEY_LABELS[key] ?? key;
           const isMultiline = MULTILINE_KEYS.has(key);
           const isRtl = key.endsWith("_ar");
@@ -144,16 +181,12 @@ export default function SiteTextEditor() {
         })}
       </div>
 
-      <div className="pt-2">
-        <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+      {/* Mobile sticky save — bottom */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border p-4">
+        <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Sauvegarder tous les textes
+          {saving ? "Enregistrement..." : "Enregistrer tout"}
         </Button>
-        {msg && (
-          <span className={`ml-3 text-sm ${msg.includes("succès") ? "text-green-600" : "text-destructive"}`}>
-            {msg}
-          </span>
-        )}
       </div>
     </div>
   );

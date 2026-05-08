@@ -64,11 +64,15 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
               type="password"
               placeholder="••••••••••••"
               autoComplete="current-password"
+              aria-label="Mot de passe administrateur"
               {...register("password")}
             />
             {errors.password && (
               <p className="text-xs text-destructive">{errors.password.message}</p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Si vous avez perdu le mot de passe, contactez Mahdi.
+            </p>
           </div>
 
           {error && (
