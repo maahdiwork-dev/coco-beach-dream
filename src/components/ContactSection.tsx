@@ -2,23 +2,38 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { MapPin, Mail, Phone, Clock, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useForm } from "@formspree/react";
+import { content, type Lang } from "@/data/content";
 
-const ContactSection = () => {
+type ContactSectionProps = {
+  lang: Lang;
+};
+
+const ContactSection = ({ lang }: ContactSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
-  const { toast } = useToast();
+  const t = content[lang];
+  const [fsState, fsSend] = useForm("xaqaobew");
   const [form, setForm] = useState({
     name: "", phone: "", date: "", people: "", forfait: "", message: "",
   });
 
+  const buildWaLink = () => {
+    const lines = [
+      `Bonjour VIP Coco Beach, je voudrais réserver :`,
+      form.name    && `👤 Nom : ${form.name}`,
+      form.phone   && `📞 Téléphone : ${form.phone}`,
+      form.date    && `📅 Date : ${form.date}`,
+      form.people  && `👥 Personnes : ${form.people}`,
+      form.forfait && `🏖️ Forfait : ${form.forfait}`,
+      form.message && `💬 Message : ${form.message}`,
+    ].filter(Boolean).join("\n");
+    return "https://wa.me/21656530516?text=" + encodeURIComponent(lines);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Demande envoyée !",
-      description: "Nous vous contacterons bientôt pour confirmer votre réservation.",
-    });
-    setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" });
+    fsSend({ nom: form.name, téléphone: form.phone, date: form.date, personnes: form.people, forfait: form.forfait, message: form.message });
   };
 
   const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
@@ -32,8 +47,8 @@ const ContactSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="section-title">Contactez-Nous</h2>
-          <p className="section-subtitle">Réservez votre journée paradisiaque</p>
+          <h2 className="section-title">{lang === "fr" ? "Contactez-Nous" : "اتصل بنا"}</h2>
+          <p className="section-subtitle">{t.warning}</p>
         </motion.div>
 
         <div className="grid lg:grid-cols-5 gap-8 max-w-6xl mx-auto">
@@ -63,24 +78,13 @@ const ContactSection = () => {
 
             <div className="flex gap-3 pt-2">
               <a
-                href="https://www.instagram.com/"
+                href="https://www.instagram.com/vipcoucoubeach/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={20} />
-              </a>
-              <a
-                href="https://www.facebook.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-                aria-label="Facebook"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
               </a>
             </div>
           </motion.div>
@@ -92,6 +96,16 @@ const ContactSection = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="lg:col-span-3"
           >
+            {fsState.succeeded ? (
+              <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
+                <div className="text-4xl">✅</div>
+                <h3 className="font-heading text-xl font-bold text-primary">Demande envoyée !</h3>
+                <p className="text-muted-foreground">Nous vous contacterons bientôt pour confirmer votre réservation.</p>
+                <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); window.location.hash = ""; }}>
+                  Nouvelle demande
+                </Button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="card-premium p-6 md:p-8 space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
@@ -150,10 +164,11 @@ const ContactSection = () => {
                   className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   <option value="">Choisir un forfait</option>
-                  <option value="parasol">Parasol — 70 DT</option>
-                  <option value="cabane">Cabane Sable — 70 DT</option>
-                  <option value="paillote">Paillote — 80 DT</option>
-                  <option value="paillote-1">Paillote 1ère Position — 85 DT</option>
+                  {t.packages.map((packageItem) => (
+                    <option key={packageItem.name} value={packageItem.name}>
+                      {packageItem.name} — {packageItem.price}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -166,10 +181,20 @@ const ContactSection = () => {
                   className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
-              <Button variant="ocean" size="lg" type="submit" className="w-full">
-                Envoyer la Demande
+              <Button variant="ocean" size="lg" type="submit" className="w-full" disabled={fsState.submitting}>
+                {fsState.submitting ? "Envoi en cours…" : "Envoyer la Demande"}
+              </Button>
+              <Button
+                variant="sand"
+                size="lg"
+                type="button"
+                className="w-full"
+                onClick={() => window.open(buildWaLink(), "_blank", "noopener,noreferrer")}
+              >
+                {t.nav.reserver}
               </Button>
             </form>
+            )}
           </motion.div>
         </div>
       </div>

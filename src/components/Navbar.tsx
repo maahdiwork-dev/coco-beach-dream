@@ -1,17 +1,26 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { content, type Lang } from "@/data/content";
+import { getWhatsAppBookingLink } from "@/lib/booking";
 
-const navLinks = [
-  { label: "Accueil", href: "#accueil" },
-  { label: "Forfaits", href: "#forfaits" },
-  { label: "Galerie", href: "#galerie" },
-  { label: "Contact", href: "#contact" },
-];
+type NavbarProps = {
+  lang: Lang;
+  setLang: (lang: Lang) => void;
+};
 
-const Navbar = () => {
+const Navbar = ({ lang, setLang }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = content[lang];
+  const navLinks = [
+    { label: t.nav.accueil, href: "#accueil" },
+    { label: t.nav.forfaits, href: "#forfaits" },
+    { label: t.nav.supplements, href: "#supplements" },
+    { label: t.nav.galerie, href: "#galerie" },
+    { label: t.nav.contact, href: "#contact" },
+  ];
+  const waLink = getWhatsAppBookingLink(lang);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -52,23 +61,45 @@ const Navbar = () => {
               {l.label}
             </button>
           ))}
-          <Button variant="sand" size="sm" onClick={() => handleClick("#contact")}>
-            Réserver Maintenant
+          <button
+            type="button"
+            onClick={() => setLang(lang === "fr" ? "ar" : "fr")}
+            className="rounded-full border border-white/40 px-3 py-1 text-xs font-bold transition-colors hover:bg-white/10"
+            style={{ color: scrolled ? "hsl(var(--foreground))" : "#fff" }}
+            aria-label={lang === "fr" ? "Passer en arabe" : "Passer en français"}
+          >
+            {lang === "fr" ? "AR" : "FR"}
+          </button>
+          <Button variant="sand" size="sm" asChild>
+            <a href="#contact">
+              {t.nav.reserver}
+            </a>
           </Button>
         </div>
 
         {/* Mobile toggle */}
-        <button
-          className="md:hidden p-2"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Menu"
-        >
-          {mobileOpen ? (
-            <X size={24} style={{ color: scrolled ? "hsl(var(--foreground))" : "#fff" }} />
-          ) : (
-            <Menu size={24} style={{ color: scrolled ? "hsl(var(--foreground))" : "#fff" }} />
-          )}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLang(lang === "fr" ? "ar" : "fr")}
+            className="rounded-full border border-white/40 px-3 py-1 text-xs font-bold"
+            style={{ color: scrolled ? "hsl(var(--foreground))" : "#fff" }}
+            aria-label={lang === "fr" ? "Passer en arabe" : "Passer en français"}
+          >
+            {lang === "fr" ? "AR" : "FR"}
+          </button>
+          <button
+            className="p-2"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? (
+              <X size={24} style={{ color: scrolled ? "hsl(var(--foreground))" : "#fff" }} />
+            ) : (
+              <Menu size={24} style={{ color: scrolled ? "hsl(var(--foreground))" : "#fff" }} />
+            )}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu */}
@@ -84,8 +115,10 @@ const Navbar = () => {
                 {l.label}
               </button>
             ))}
-            <Button variant="sand" className="mt-2" onClick={() => handleClick("#contact")}>
-              Réserver Maintenant
+            <Button variant="sand" className="mt-2" asChild>
+              <a href="#contact">
+                {t.nav.reserver}
+              </a>
             </Button>
           </div>
         </div>

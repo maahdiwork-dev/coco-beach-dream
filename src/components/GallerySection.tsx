@@ -2,22 +2,32 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import g1 from "@/assets/gallery-1.jpg";
-import g2 from "@/assets/gallery-2.jpg";
-import g3 from "@/assets/gallery-3.jpg";
-import g4 from "@/assets/gallery-4.jpg";
-import g5 from "@/assets/gallery-5.jpg";
-import g6 from "@/assets/gallery-6.jpg";
+import romanticWalkway from "@/assets/vip-2026/02_romantic_DNYvCq3M9u3_2.jpg";
+import romanticWalkwayWebp from "@/assets/vip-2026/02_romantic_DNYvCq3M9u3_2.webp";
+import foodShrimpPasta from "@/assets/vip-2026/05_food_DNjA0_cMM6y_1.jpg";
+import foodShrimpPastaWebp from "@/assets/vip-2026/05_food_DNjA0_cMM6y_1.webp";
+import boatCompressed from "@/assets/vip-2026/gallery-boat-compressed.jpg";
+import boatCompressedWebp from "@/assets/vip-2026/gallery-boat-compressed.webp";
+import cabaneLoungers from "@/assets/vip-2026/07_cabane_DMpc_2.jpg";
+import cabaneLoungersWebp from "@/assets/vip-2026/07_cabane_DMpc_2.webp";
+import cabaneAerial from "@/assets/vip-2026/07_cabane_DMpc_1.jpg";
+import cabaneAerialWebp from "@/assets/vip-2026/07_cabane_DMpc_1.webp";
+import type { Lang } from "@/data/content";
 
 const images = [
-  { src: g1, alt: "Restaurant en bord de mer", w: 800, h: 600 },
-  { src: g2, alt: "Plage turquoise avec parasols", w: 600, h: 800 },
-  { src: g3, alt: "Plat de poisson méditerranéen", w: 800, h: 600 },
-  { src: g4, alt: "Bateau traditionnel en mer turquoise", w: 800, h: 600 },
-  { src: g5, alt: "Transats de luxe sur la plage", w: 600, h: 800 },
-  { src: g6, alt: "Vue aérienne de la côte", w: 800, h: 600 },
+  { id: "restaurant", src: g1, alt: "Restaurant en bord de mer", w: 800, h: 600 },
+  { id: "walkway", src: romanticWalkway, webp: romanticWalkwayWebp, alt: "Passerelle et cabane VIP Coco Beach en lumière de coucher de soleil", w: 1440, h: 1081 },
+  { id: "food", src: foodShrimpPasta, webp: foodShrimpPastaWebp, alt: "Plat de pâtes aux crevettes servi à VIP Coco Beach", w: 1026, h: 1367 },
+  { id: "boat", src: boatCompressed, webp: boatCompressedWebp, alt: "Bateau traditionnel en mer turquoise vers VIP Coco Beach", w: 800, h: 600 },
+  { id: "loungers", src: cabaneLoungers, webp: cabaneLoungersWebp, alt: "Cabanes et transats VIP Coco Beach au bord de l'eau", w: 1440, h: 1085 },
+  { id: "aerial", src: cabaneAerial, webp: cabaneAerialWebp, alt: "Vue aérienne de VIP Coco Beach avec arche en coeur", w: 1440, h: 1081 },
 ];
 
-const GallerySection = () => {
+type GallerySectionProps = {
+  lang: Lang;
+};
+
+const GallerySection = ({ lang: _lang }: GallerySectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -44,21 +54,24 @@ const GallerySection = () => {
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
             {images.map((img, i) => (
               <motion.button
-                key={i}
+                key={img.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
                 onClick={() => setLightbox(i)}
                 className="block w-full overflow-hidden rounded-2xl group break-inside-avoid"
               >
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  loading="lazy"
-                  width={img.w}
-                  height={img.h}
-                  className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                <picture>
+                  {img.webp && <source srcSet={img.webp} type="image/webp" />}
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    loading="lazy"
+                    width={img.w}
+                    height={img.h}
+                    className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                </picture>
               </motion.button>
             ))}
           </div>
@@ -95,12 +108,16 @@ const GallerySection = () => {
           >
             <ChevronRight size={24} />
           </button>
-          <img
-            src={images[lightbox].src}
-            alt={images[lightbox].alt}
-            className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <picture>
+            {images[lightbox].webp && <source srcSet={images[lightbox].webp} type="image/webp" />}
+            <img
+              src={images[lightbox].src}
+              alt={images[lightbox].alt}
+              loading="lazy"
+              className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </picture>
         </div>
       )}
     </>

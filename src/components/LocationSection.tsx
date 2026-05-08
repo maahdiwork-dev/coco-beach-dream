@@ -1,8 +1,13 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { MapPin, Ship, Car } from "lucide-react";
+import type { Lang } from "@/data/content";
 
-const LocationSection = () => {
+type LocationSectionProps = {
+  lang: Lang;
+};
+
+const LocationSection = ({ lang: _lang }: LocationSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -67,7 +72,7 @@ const LocationSection = () => {
             initial={{ opacity: 0, x: 30 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="rounded-2xl overflow-hidden h-[350px] md:h-[400px]"
+            className="rounded-2xl overflow-hidden h-[350px] md:h-[400px] bg-primary/10 flex items-center justify-center"
           >
             <iframe
               title="VIP Coco Beach — Ghar el Melh"

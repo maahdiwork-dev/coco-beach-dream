@@ -3,6 +3,7 @@ import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { Anchor, Waves, UtensilsCrossed } from "lucide-react";
 import galleryImg from "@/assets/gallery-1.jpg";
+import type { Lang } from "@/data/content";
 
 const features = [
   { icon: Anchor, title: "Accès par Bateau", desc: "Traversée depuis le port de Ghar el Melh" },
@@ -10,7 +11,11 @@ const features = [
   { icon: UtensilsCrossed, title: "Cuisine Raffinée", desc: "Saveurs méditerranéennes pieds dans l'eau" },
 ];
 
-const AboutSection = () => {
+type AboutSectionProps = {
+  lang: Lang;
+};
+
+const AboutSection = ({ lang: _lang }: AboutSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 

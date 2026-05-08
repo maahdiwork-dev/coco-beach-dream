@@ -1,6 +1,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { Star } from "lucide-react";
+import { content, type Lang } from "@/data/content";
 
 const reviews = [
   {
@@ -17,9 +18,14 @@ const reviews = [
   },
 ];
 
-const TestimonialsSection = () => {
+type TestimonialsSectionProps = {
+  lang: Lang;
+};
+
+const TestimonialsSection = ({ lang }: TestimonialsSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const t = content[lang];
 
   return (
     <section className="section-padding" ref={ref}>
@@ -30,7 +36,7 @@ const TestimonialsSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="section-title">Avis de nos Visiteurs</h2>
+          <h2 className="section-title">{t.avisTitle}</h2>
           <p className="section-subtitle">Ce que nos clients disent de leur expérience</p>
         </motion.div>
 

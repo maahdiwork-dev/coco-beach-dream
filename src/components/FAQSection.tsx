@@ -6,33 +6,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { content, type Lang } from "@/data/content";
 
-const faqs = [
-  {
-    q: "Comment se rendre à la plage ?",
-    a: "La plage est accessible uniquement par bateau depuis le port de Ghar el Melh. Le transfert aller-retour est inclus dans tous nos forfaits.",
-  },
-  {
-    q: "Les forfaits incluent-ils le trajet en bateau ?",
-    a: "Oui, tous nos forfaits comprennent le transfert aller-retour en bateau depuis le port de Ghar el Melh.",
-  },
-  {
-    q: "Y a-t-il un parking ?",
-    a: "Oui, un parking sécurisé est mis à votre disposition gratuitement. Il est inclus dans chaque forfait.",
-  },
-  {
-    q: "Quelle est la durée de la journée ?",
-    a: "Vous pouvez profiter de la plage toute la journée, de 9h à 19h environ.",
-  },
-  {
-    q: "Peut-on payer sur place ?",
-    a: "Oui, nous acceptons le paiement en espèces et par paiement mobile directement sur place.",
-  },
-];
+type FAQSectionProps = {
+  lang: Lang;
+};
 
-const FAQSection = () => {
+const FAQSection = ({ lang }: FAQSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const faqs = content[lang].faq;
 
   return (
     <section className="section-padding" ref={ref}>
@@ -43,7 +26,7 @@ const FAQSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="section-title">En Savoir Plus</h2>
+          <h2 className="section-title">FAQ</h2>
           <p className="section-subtitle">Questions fréquemment posées</p>
         </motion.div>
 
