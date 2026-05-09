@@ -23,14 +23,21 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
   const forfaitsTitle = data?.site_text[`forfaits_title_${lang}`] ?? t.forfaitsTitle;
   const forfaitsNote = data?.site_text[`forfaits_note_${lang}`] ?? t.forfaitsNote;
 
-  // Build display packages from DB data or fall back to static content.ts
+  // Build display packages from DB data or fall back to static content.ts.
+  // For AR mode, fall back to FR field when AR is empty (owner is allowed to
+  // skip Arabic translation per the walkthrough).
   const packages: Array<{ name: string; price: string; items: string[] }> =
     data?.forfaits && data.forfaits.length > 0
-      ? data.forfaits.map((f: Forfait) => ({
-          name: lang === "ar" ? f.name_ar : f.name_fr,
-          price: lang === "ar" ? f.price_ar : f.price_fr,
-          items: lang === "ar" ? (f.items_ar ?? []) : (f.items_fr ?? []),
-        }))
+      ? data.forfaits.map((f: Forfait) => {
+          const isAr = lang === "ar";
+          const arItems = f.items_ar ?? [];
+          const frItems = f.items_fr ?? [];
+          return {
+            name: isAr ? (f.name_ar || f.name_fr) : f.name_fr,
+            price: isAr ? (f.price_ar || f.price_fr) : f.price_fr,
+            items: isAr ? (arItems.length ? arItems : frItems) : frItems,
+          };
+        })
       : t.packages.map((p) => ({ name: p.name, price: p.price, items: [...p.items] }));
 
   return (

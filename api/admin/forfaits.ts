@@ -4,15 +4,17 @@ import { requireAdmin } from "../_lib/auth";
 import { getServiceClient } from "../_lib/supabase";
 import { logAudit } from "../_lib/audit";
 
+// _ar fields are optional on create — owner is allowed to skip AR translations.
+// Public-site components fall back to the FR field when AR is empty.
 const createSchema = z.object({
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
   display_order: z.number().int().optional(),
   name_fr: z.string().min(1),
-  name_ar: z.string().min(1),
+  name_ar: z.string().optional().default(""),
   price_fr: z.string().min(1),
-  price_ar: z.string().min(1),
+  price_ar: z.string().optional().default(""),
   items_fr: z.array(z.string()).min(1),
-  items_ar: z.array(z.string()).min(1),
+  items_ar: z.array(z.string()).optional().default([]),
   active: z.boolean().optional().default(true),
 });
 

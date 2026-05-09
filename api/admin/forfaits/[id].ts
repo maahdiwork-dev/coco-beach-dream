@@ -4,15 +4,18 @@ import { requireAdmin } from "../../_lib/auth";
 import { getServiceClient } from "../../_lib/supabase";
 import { logAudit } from "../../_lib/audit";
 
+// _ar fields accept empty strings/arrays — owner is allowed to skip AR
+// translations per the walkthrough doc. Public-site components fall back to
+// the FR field when AR is empty.
 const patchSchema = z.object({
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/).optional(),
   display_order: z.number().int().optional(),
   name_fr: z.string().min(1).optional(),
-  name_ar: z.string().min(1).optional(),
+  name_ar: z.string().optional(),
   price_fr: z.string().min(1).optional(),
-  price_ar: z.string().min(1).optional(),
+  price_ar: z.string().optional(),
   items_fr: z.array(z.string()).min(1).optional(),
-  items_ar: z.array(z.string()).min(1).optional(),
+  items_ar: z.array(z.string()).optional(),
   active: z.boolean().optional(),
 }).strict();
 

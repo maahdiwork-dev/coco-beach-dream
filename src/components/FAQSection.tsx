@@ -22,8 +22,9 @@ const FAQSection = ({ lang }: FAQSectionProps) => {
   const faqs: Array<{ q: string; a: string }> =
     data?.faq && data.faq.length > 0
       ? data.faq.map((f: FaqItem) => ({
-          q: lang === "ar" ? f.question_ar : f.question_fr,
-          a: lang === "ar" ? f.answer_ar : f.answer_fr,
+          // AR mode falls back to FR when AR fields are empty (owner may skip translation).
+          q: lang === "ar" ? (f.question_ar || f.question_fr) : f.question_fr,
+          a: lang === "ar" ? (f.answer_ar || f.answer_fr) : f.answer_fr,
         }))
       : content[lang].faq;
 
