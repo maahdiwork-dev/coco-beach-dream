@@ -2,7 +2,6 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { MapPin, Mail, Phone, Clock, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useForm as useFormspree } from "@formspree/react";
 import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
 
@@ -16,17 +15,10 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
   const t = content[lang];
   const { data: contentData } = useContent();
 
-  // Runtime Formspree ID — falls back to env var for backward compat
-  const formspreeId =
-    contentData?.site_text?.formspree_id ||
-    (import.meta.env.VITE_FORMSPREE_ID !== "YOUR_FORM_ID"
-      ? import.meta.env.VITE_FORMSPREE_ID
-      : "");
-
-  // Runtime WhatsApp number
+  // Runtime WhatsApp number — falls back to Houyem's number
   const whatsappNumber = contentData?.site_text?.whatsapp_number ?? "";
 
-  const [fsState, fsSend] = useFormspree(formspreeId || "PLACEHOLDER_NEVER_SENT");
+  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     name: "", phone: "", date: "", people: "", forfait: "", message: "",
   });
@@ -48,13 +40,11 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formspreeId) return;
-    fsSend({ nom: form.name, téléphone: form.phone, date: form.date, personnes: form.people, forfait: form.forfait, message: form.message });
+    window.open(buildWaLink(), "_blank", "noopener,noreferrer");
+    setSubmitted(true);
   };
 
   const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
-
-  const formDisabled = !formspreeId;
 
   return (
     <section id="contact" className="section-padding bg-warm-cream" ref={ref}>
@@ -114,29 +104,12 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="lg:col-span-3"
           >
-            {formDisabled ? (
-              <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[200px]">
-                <p className="text-muted-foreground">
-                  Formulaire de contact bientôt disponible.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Pour réserver, utilisez le bouton WhatsApp ci-dessous.
-                </p>
-                <Button
-                  variant="sand"
-                  size="lg"
-                  type="button"
-                  onClick={() => window.open(buildWaLink(), "_blank", "noopener,noreferrer")}
-                >
-                  {t.nav.reserver}
-                </Button>
-              </div>
-            ) : fsState.succeeded ? (
+            {submitted ? (
               <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
                 <div className="text-4xl">✅</div>
-                <h3 className="font-heading text-xl font-bold text-primary">Demande envoyée !</h3>
-                <p className="text-muted-foreground">Nous vous contacterons bientôt pour confirmer votre réservation.</p>
-                <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); window.location.hash = ""; }}>
+                <h3 className="font-heading text-xl font-bold text-primary">WhatsApp ouvert !</h3>
+                <p className="text-muted-foreground">Votre demande a été transmise. Nous confirmerons votre réservation rapidement.</p>
+                <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); setSubmitted(false); }}>
                   Nouvelle demande
                 </Button>
               </div>
@@ -218,16 +191,7 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                     className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                   />
                 </div>
-                <Button variant="ocean" size="lg" type="submit" className="w-full" disabled={fsState.submitting}>
-                  {fsState.submitting ? "Envoi en cours…" : "Envoyer la Demande"}
-                </Button>
-                <Button
-                  variant="sand"
-                  size="lg"
-                  type="button"
-                  className="w-full"
-                  onClick={() => window.open(buildWaLink(), "_blank", "noopener,noreferrer")}
-                >
+                <Button variant="sand" size="lg" type="submit" className="w-full">
                   {t.nav.reserver}
                 </Button>
               </form>
