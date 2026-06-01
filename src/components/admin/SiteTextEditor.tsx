@@ -20,6 +20,8 @@ const MULTILINE_KEYS = new Set([
   "supplements_note_ar",
   "warning_fr",
   "warning_ar",
+  "about_text_fr",
+  "about_text_ar",
 ]);
 
 const KEY_LABELS: Record<string, string> = {
@@ -46,6 +48,8 @@ const KEY_LABELS: Record<string, string> = {
   avis_title_fr: "Titre avis (FR)",
   avis_title_ar: "Titre avis (AR)",
   whatsapp_number: "Numéro WhatsApp",
+  about_text_fr: "Texte À Propos (FR)",
+  about_text_ar: "Texte À Propos (AR)",
 };
 
 // Keys that have a FR counterpart with the same base name
@@ -57,9 +61,10 @@ type LangTab = "fr" | "ar";
 
 type SiteTextEditorProps = {
   filterKeys?: string[];
+  defaults?: Record<string, string>;
 };
 
-export default function SiteTextEditor({ filterKeys }: SiteTextEditorProps) {
+export default function SiteTextEditor({ filterKeys, defaults }: SiteTextEditorProps) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,7 +76,19 @@ export default function SiteTextEditor({ filterKeys }: SiteTextEditorProps) {
         const res = await fetch("/api/content");
         const body = await res.json();
         const map: Record<string, string> = body.site_text ?? {};
-        setEntries(Object.entries(map).map(([key, value]) => ({ key, value })));
+        let loadedEntries: Entry[] = Object.entries(map).map(([key, value]) => ({ key, value }));
+
+        // When filterKeys is provided, ensure every requested key exists in state.
+        // Keys missing from the API response are initialised from defaults or "".
+        if (filterKeys) {
+          const existing = new Set(loadedEntries.map((e) => e.key));
+          const synthetic: Entry[] = filterKeys
+            .filter((k) => !existing.has(k))
+            .map((k) => ({ key: k, value: defaults?.[k] ?? "" }));
+          loadedEntries = [...loadedEntries, ...synthetic];
+        }
+
+        setEntries(loadedEntries);
       } catch {
         toast("Impossible de charger les textes", {
           style: { background: "var(--destructive)", color: "#fff" },
@@ -80,6 +97,7 @@ export default function SiteTextEditor({ filterKeys }: SiteTextEditorProps) {
         setLoading(false);
       }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (key: string, value: string) => {

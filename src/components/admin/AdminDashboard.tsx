@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Loader2, Pencil } from "lucide-react";
+import { LogOut, Loader2, Pencil, Eye } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -145,19 +145,32 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               Tableau de bord
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            disabled={loggingOut}
-          >
-            {loggingOut ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <LogOut className="mr-2 h-4 w-4" />
-            )}
-            Se déconnecter
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="border-[#0a3d62]/30 text-[#0a3d62] hover:bg-[#0a3d62]/5"
+            >
+              <a href="/">
+                <Eye className="mr-2 h-4 w-4" />
+                Voir le site (mode édition)
+              </a>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              disabled={loggingOut}
+            >
+              {loggingOut ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+              )}
+              Se déconnecter
+            </Button>
+          </div>
         </div>
       </header>
 

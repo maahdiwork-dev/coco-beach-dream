@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { Anchor, Waves, UtensilsCrossed } from "lucide-react";
 import galleryImg from "@/assets/gallery-1.jpg";
 import type { Lang } from "@/data/content";
+import { useContent } from "@/hooks/useContent";
 
 const features = [
   { icon: Anchor, title: "Accès par Bateau", desc: "Traversée depuis le port de Ghar el Melh" },
@@ -11,13 +12,38 @@ const features = [
   { icon: UtensilsCrossed, title: "Cuisine Raffinée", desc: "Saveurs méditerranéennes pieds dans l'eau" },
 ];
 
+// Fallback / default text — also used as defaults for the inline editor
+const ABOUT_DEFAULT_FR =
+  "VIP Coco Beach est un restaurant d'exception niché sur la plage privée de " +
+  "Coco Beach, à Ghar el Melh dans la région de Bizerte. Accessible uniquement " +
+  "par bateau, notre paradis préservé vous offre une évasion unique loin du " +
+  "tumulte quotidien. Profitez d'un cadre idyllique pieds dans l'eau, d'une " +
+  "cuisine méditerranéenne raffinée et d'un service attentionné pour une journée " +
+  "inoubliable entre amis ou en famille.";
+
+const ABOUT_DEFAULT_AR =
+  "VIP Coco Beach مطعم استثنائي يقع على الشاطئ الخاص لـ Coco Beach في غار الملح " +
+  "بمنطقة بنزرت. لا يمكن الوصول إليه إلا بالقارب، يمنحك هذا الملجأ الطبيعي الهادئ " +
+  "فرصة هروب فريدة بعيدًا عن صخب الحياة اليومية. استمتع بإطار خلاب مع أقدامك في الماء، " +
+  "ومأكولات بحر أبيض متوسط راقية وخدمة متميزة لقضاء يوم لا يُنسى مع الأصدقاء أو العائلة.";
+
+export const ABOUT_DEFAULTS: Record<string, string> = {
+  about_text_fr: ABOUT_DEFAULT_FR,
+  about_text_ar: ABOUT_DEFAULT_AR,
+};
+
 type AboutSectionProps = {
   lang: Lang;
 };
 
-const AboutSection = ({ lang: _lang }: AboutSectionProps) => {
+const AboutSection = ({ lang }: AboutSectionProps) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const { data } = useContent();
+
+  const aboutText =
+    data?.site_text?.[`about_text_${lang}`] ??
+    (lang === "ar" ? ABOUT_DEFAULT_AR : ABOUT_DEFAULT_FR);
 
   return (
     <section id="about" className="section-padding bg-warm-cream" ref={ref}>
@@ -48,12 +74,7 @@ const AboutSection = ({ lang: _lang }: AboutSectionProps) => {
           >
             <h2 className="section-title mb-6">À Propos</h2>
             <p className="text-muted-foreground leading-relaxed mb-8 text-base md:text-lg">
-              VIP Coco Beach est un restaurant d'exception niché sur la plage privée de
-              Coco Beach, à Ghar el Melh dans la région de Bizerte. Accessible uniquement
-              par bateau, notre paradis préservé vous offre une évasion unique loin du
-              tumulte quotidien. Profitez d'un cadre idyllique pieds dans l'eau, d'une
-              cuisine méditerranéenne raffinée et d'un service attentionné pour une journée
-              inoubliable entre amis ou en famille.
+              {aboutText}
             </p>
 
             <div className="grid sm:grid-cols-3 gap-6">

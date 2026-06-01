@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import AboutSection from "@/components/AboutSection";
+import AboutSection, { ABOUT_DEFAULTS } from "@/components/AboutSection";
 import StatsSection from "@/components/StatsSection";
 import ForfaitsSection from "@/components/ForfaitsSection";
 import SupplementsSection from "@/components/SupplementsSection";
@@ -14,6 +14,95 @@ import FooterSection from "@/components/FooterSection";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ScrollToTop from "@/components/ScrollToTop";
 import type { Lang } from "@/data/content";
+import { EditModeProvider } from "@/contexts/EditModeContext";
+import EditModeToggle from "@/components/admin/EditModeToggle";
+import EditableSection from "@/components/admin/EditableSection";
+import ForfaitsEditor from "@/components/admin/ForfaitsEditor";
+import SupplementsEditor from "@/components/admin/SupplementsEditor";
+import GalleryEditor from "@/components/admin/GalleryEditor";
+import FaqEditor from "@/components/admin/FaqEditor";
+import SiteTextEditor from "@/components/admin/SiteTextEditor";
+import HeroVideoUploader from "@/components/admin/HeroVideoUploader";
+import { useContent } from "@/hooks/useContent";
+
+const HERO_KEYS = ["hero_title_fr", "hero_title_ar", "hero_sub_fr", "hero_sub_ar"];
+const ABOUT_KEYS = ["about_text_fr", "about_text_ar"];
+const WHATSAPP_KEYS = ["whatsapp_number", "warning_fr", "warning_ar"];
+
+function IndexInner({ lang }: { lang: Lang }) {
+  const { data: contentData } = useContent();
+
+  return (
+    <>
+      <EditableSection
+        title="Vidéo & Titre"
+        editor={
+          <div className="space-y-6">
+            <HeroVideoUploader
+              currentStoragePath={contentData?.hero_video?.storage_path ?? null}
+            />
+            <div className="border-t border-border pt-4">
+              <SiteTextEditor filterKeys={HERO_KEYS} />
+            </div>
+          </div>
+        }
+      >
+        <HeroSection lang={lang} />
+      </EditableSection>
+
+      <EditableSection
+        title="À Propos"
+        editor={<SiteTextEditor filterKeys={ABOUT_KEYS} defaults={ABOUT_DEFAULTS} />}
+      >
+        <AboutSection lang={lang} />
+      </EditableSection>
+
+      {/* Stats — not editable (computed values) */}
+      <StatsSection lang={lang} />
+
+      <EditableSection
+        title="Forfaits"
+        editor={<ForfaitsEditor />}
+      >
+        <ForfaitsSection lang={lang} />
+      </EditableSection>
+
+      <EditableSection
+        title="Suppléments"
+        editor={<SupplementsEditor />}
+      >
+        <SupplementsSection lang={lang} />
+      </EditableSection>
+
+      <EditableSection
+        title="Galerie"
+        editor={<GalleryEditor />}
+      >
+        <GallerySection lang={lang} />
+      </EditableSection>
+
+      {/* Testimonials — not editable for v1 */}
+      <TestimonialsSection lang={lang} />
+
+      {/* Location — not editable for v1 */}
+      <LocationSection lang={lang} />
+
+      <EditableSection
+        title="FAQ"
+        editor={<FaqEditor />}
+      >
+        <FAQSection lang={lang} />
+      </EditableSection>
+
+      <EditableSection
+        title="WhatsApp & Contact"
+        editor={<SiteTextEditor filterKeys={WHATSAPP_KEYS} />}
+      >
+        <ContactSection lang={lang} />
+      </EditableSection>
+    </>
+  );
+}
 
 const Index = () => {
   const [lang, setLang] = useState<Lang>("fr");
@@ -24,24 +113,18 @@ const Index = () => {
   }, [lang]);
 
   return (
-    <div lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
-      <Navbar lang={lang} setLang={setLang} />
-      <main>
-        <HeroSection lang={lang} />
-        <AboutSection lang={lang} />
-        <StatsSection lang={lang} />
-        <ForfaitsSection lang={lang} />
-        <SupplementsSection lang={lang} />
-        <GallerySection lang={lang} />
-        <TestimonialsSection lang={lang} />
-        <LocationSection lang={lang} />
-        <FAQSection lang={lang} />
-        <ContactSection lang={lang} />
-      </main>
-      <FooterSection lang={lang} />
-      <WhatsAppButton lang={lang} />
-      <ScrollToTop />
-    </div>
+    <EditModeProvider>
+      <div lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
+        <Navbar lang={lang} setLang={setLang} />
+        <main>
+          <IndexInner lang={lang} />
+        </main>
+        <FooterSection lang={lang} />
+        <WhatsAppButton lang={lang} />
+        <ScrollToTop />
+        <EditModeToggle />
+      </div>
+    </EditModeProvider>
   );
 };
 
