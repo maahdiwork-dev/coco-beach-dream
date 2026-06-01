@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import AboutSection, { ABOUT_DEFAULTS } from "@/components/AboutSection";
+import AboutSection from "@/components/AboutSection";
 import StatsSection from "@/components/StatsSection";
 import ForfaitsSection from "@/components/ForfaitsSection";
 import SupplementsSection from "@/components/SupplementsSection";
@@ -23,10 +23,10 @@ import GalleryEditor from "@/components/admin/GalleryEditor";
 import FaqEditor from "@/components/admin/FaqEditor";
 import SiteTextEditor from "@/components/admin/SiteTextEditor";
 import HeroVideoUploader from "@/components/admin/HeroVideoUploader";
+import AboutEditor from "@/components/admin/AboutEditor";
 import { useContent } from "@/hooks/useContent";
 
 const HERO_KEYS = ["hero_title_fr", "hero_title_ar", "hero_sub_fr", "hero_sub_ar"];
-const ABOUT_KEYS = ["about_text_fr", "about_text_ar"];
 const WHATSAPP_KEYS = ["whatsapp_number", "warning_fr", "warning_ar"];
 
 function IndexInner({ lang }: { lang: Lang }) {
@@ -52,7 +52,7 @@ function IndexInner({ lang }: { lang: Lang }) {
 
       <EditableSection
         title="À Propos"
-        editor={<SiteTextEditor filterKeys={ABOUT_KEYS} defaults={ABOUT_DEFAULTS} />}
+        editor={<AboutEditor />}
       >
         <AboutSection lang={lang} />
       </EditableSection>
