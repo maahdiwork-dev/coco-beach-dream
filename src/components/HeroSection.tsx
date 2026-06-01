@@ -72,7 +72,7 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
         </h1>
         <p className="mt-4 max-w-3xl text-xl font-medium md:text-2xl">{heroSub}</p>
         <Button variant="sand" size="xl" asChild className="mt-8">
-          <a href="#contact">
+          <a href={waLink} target="_blank" rel="noopener noreferrer">
             {t.nav.reserver}
           </a>
         </Button>
