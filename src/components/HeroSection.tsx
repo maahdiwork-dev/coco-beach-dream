@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
-import { getWhatsAppBookingLink } from "@/lib/booking";
 import { useContent } from "@/hooks/useContent";
 
 type HeroSectionProps = {
@@ -12,7 +11,6 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { data } = useContent();
   const t = content[lang];
-  const waLink = getWhatsAppBookingLink(lang);
 
   // Resolve content: prefer DB values, fall back to static content.ts
   const heroTitle = data?.site_text[`hero_title_${lang}`] ?? t.heroTitle;
@@ -72,7 +70,7 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
         </h1>
         <p className="mt-4 max-w-3xl text-xl font-medium md:text-2xl">{heroSub}</p>
         <Button variant="sand" size="xl" asChild className="mt-8">
-          <a href={waLink} target="_blank" rel="noopener noreferrer">
+          <a href="#contact">
             {t.nav.reserver}
           </a>
         </Button>

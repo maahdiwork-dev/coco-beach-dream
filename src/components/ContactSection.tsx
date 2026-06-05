@@ -1,9 +1,11 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
-import { MapPin, Mail, Phone, Clock, Instagram } from "lucide-react";
+import { MapPin, Mail, Phone, Clock, Instagram, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
+
+const RESERVATION_EMAIL = "vipcoucoubeach1@gmail.com";
 
 type ContactSectionProps = {
   lang: Lang;
@@ -11,6 +13,7 @@ type ContactSectionProps = {
 
 const ContactSection = ({ lang }: ContactSectionProps) => {
   const ref = useRef(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const t = content[lang];
   const { data: contentData } = useContent();
@@ -23,9 +26,8 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
     name: "", phone: "", date: "", people: "", forfait: "", message: "",
   });
 
-  const buildWaLink = () => {
-    const lines = [
-      `Bonjour VIP Coco Beach, je voudrais réserver :`,
+  const buildLines = () =>
+    [
       form.name    && `👤 Nom : ${form.name}`,
       form.phone   && `📞 Téléphone : ${form.phone}`,
       form.date    && `📅 Date : ${form.date}`,
@@ -33,14 +35,31 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
       form.forfait && `🏖️ Forfait : ${form.forfait}`,
       form.message && `💬 Message : ${form.message}`,
     ].filter(Boolean).join("\n");
+
+  const buildWaLink = () => {
+    const body = `Bonjour VIP Coco Beach, je voudrais réserver :\n${buildLines()}`;
     const cleanNumber = whatsappNumber.replace(/[^0-9+]/g, "");
     const number = cleanNumber || "21656530516";
-    return `https://wa.me/${number}?text=${encodeURIComponent(lines)}`;
+    return `https://wa.me/${number}?text=${encodeURIComponent(body)}`;
   };
 
+  const buildMailto = () => {
+    const subject = `Réservation VIP Coco Beach — ${form.name || "Nouvelle demande"}`;
+    const body = `Bonjour VIP Coco Beach, je voudrais réserver :\n\n${buildLines()}`;
+    return `mailto:${RESERVATION_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  // WhatsApp = native form submit (gets required-field validation for free)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     window.open(buildWaLink(), "_blank", "noopener,noreferrer");
+    setSubmitted(true);
+  };
+
+  // Email = manual path; trigger the same required-field validation first
+  const handleEmail = () => {
+    if (formRef.current && !formRef.current.reportValidity()) return;
+    window.location.href = buildMailto();
     setSubmitted(true);
   };
 
@@ -107,14 +126,14 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
             {submitted ? (
               <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
                 <div className="text-4xl">✅</div>
-                <h3 className="font-heading text-xl font-bold text-primary">WhatsApp ouvert !</h3>
-                <p className="text-muted-foreground">Votre demande a été transmise. Nous confirmerons votre réservation rapidement.</p>
+                <h3 className="font-heading text-xl font-bold text-primary">Demande prête !</h3>
+                <p className="text-muted-foreground">Votre demande de réservation a été préparée. Envoyez-la pour que nous puissions la confirmer rapidement.</p>
                 <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); setSubmitted(false); }}>
                   Nouvelle demande
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="card-premium p-6 md:p-8 space-y-4">
+              <form ref={formRef} onSubmit={handleSubmit} className="card-premium p-6 md:p-8 space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-foreground mb-1 block">Nom complet</label>
@@ -191,9 +210,19 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                     className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                   />
                 </div>
-                <Button variant="sand" size="lg" type="submit" className="w-full">
-                  {t.nav.reserver}
-                </Button>
+                <div className="space-y-3 pt-1">
+                  <Button variant="sand" size="lg" type="submit" className="w-full gap-2">
+                    <MessageCircle size={18} />
+                    Réserver via WhatsApp
+                  </Button>
+                  <Button variant="ocean" size="lg" type="button" onClick={handleEmail} className="w-full gap-2">
+                    <Mail size={18} />
+                    Réserver via Email
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Choisissez WhatsApp ou Email — votre demande s'ouvre pré-remplie, il ne reste qu'à l'envoyer.
+                  </p>
+                </div>
               </form>
             )}
           </motion.div>
