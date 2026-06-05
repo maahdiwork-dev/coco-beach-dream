@@ -22,6 +22,11 @@ export function EditModeProvider({ children }: { children: React.ReactNode }) {
       .then((body) => {
         if (body?.authenticated === true) {
           setIsAdmin(true);
+          // Arriving from the login redirect (/?edit=1) → open edit mode straight away
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("edit") === "1") {
+            setEditMode(true);
+          }
         }
       })
       .catch(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import AdminLogin from "@/components/admin/AdminLogin";
-import AdminDashboard from "@/components/admin/AdminDashboard";
 import { Loader2 } from "lucide-react";
 
 type AuthState = "loading" | "unauthenticated" | "authenticated";
@@ -34,5 +34,6 @@ export default function Admin() {
     return <AdminLogin onSuccess={() => setAuthState("authenticated")} />;
   }
 
-  return <AdminDashboard onLogout={() => setAuthState("unauthenticated")} />;
+  // Authenticated → go straight to the live site in edit mode (the one, simple way to edit)
+  return <Navigate to="/?edit=1" replace />;
 }
