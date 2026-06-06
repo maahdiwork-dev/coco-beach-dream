@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
+import { scrollToReservation } from "@/lib/scroll";
 
 type HeroSectionProps = {
   lang: Lang;
@@ -69,10 +70,8 @@ const HeroSection = ({ lang }: HeroSectionProps) => {
           {heroTitle}
         </h1>
         <p className="mt-4 max-w-3xl text-xl font-medium md:text-2xl">{heroSub}</p>
-        <Button variant="sand" size="xl" asChild className="mt-8">
-          <a href="#contact">
-            {t.nav.reserver}
-          </a>
+        <Button variant="sand" size="xl" className="mt-8" onClick={() => scrollToReservation()}>
+          {t.nav.reserver}
         </Button>
       </div>
     </section>

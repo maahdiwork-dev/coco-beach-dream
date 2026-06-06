@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { Umbrella, Home, Star, Ship, Car, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
-import { getWhatsAppBookingLink } from "@/lib/booking";
+import { scrollToReservation } from "@/lib/scroll";
 import { useContent, type Forfait } from "@/hooks/useContent";
 
 const icons = [Umbrella, Home, Home, Star];
@@ -18,7 +18,6 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const { data } = useContent();
   const t = content[lang];
-  const waLink = getWhatsAppBookingLink(lang);
 
   const forfaitsTitle = data?.site_text[`forfaits_title_${lang}`] ?? t.forfaitsTitle;
   const forfaitsNote = data?.site_text[`forfaits_note_${lang}`] ?? t.forfaitsNote;
@@ -94,10 +93,8 @@ const ForfaitsSection = ({ lang }: ForfaitsSectionProps) => {
                 Tout compris
               </span>
 
-              <Button variant="ocean" className="w-full" asChild>
-                <a href="#contact">
-                  {t.nav.reserver}
-                </a>
+              <Button variant="ocean" className="w-full" onClick={() => scrollToReservation()}>
+                {t.nav.reserver}
               </Button>
             </motion.div>
             );

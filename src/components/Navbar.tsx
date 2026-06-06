@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { content, type Lang } from "@/data/content";
-import { getWhatsAppBookingLink } from "@/lib/booking";
+import { scrollToReservation } from "@/lib/scroll";
 
 type NavbarProps = {
   lang: Lang;
@@ -21,7 +21,6 @@ const Navbar = ({ lang, setLang }: NavbarProps) => {
     { label: t.nav.galerie, href: "#galerie" },
     { label: t.nav.contact, href: "#contact" },
   ];
-  const waLink = getWhatsAppBookingLink(lang);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -71,10 +70,8 @@ const Navbar = ({ lang, setLang }: NavbarProps) => {
           >
             {lang === "fr" ? "AR" : "FR"}
           </button>
-          <Button variant="sand" size="sm" asChild>
-            <a href="#contact">
-              {t.nav.reserver}
-            </a>
+          <Button variant="sand" size="sm" onClick={() => scrollToReservation()}>
+            {t.nav.reserver}
           </Button>
         </div>
 
@@ -116,10 +113,8 @@ const Navbar = ({ lang, setLang }: NavbarProps) => {
                 {l.label}
               </button>
             ))}
-            <Button variant="sand" className="mt-2" asChild>
-              <a href="#contact">
-                {t.nav.reserver}
-              </a>
+            <Button variant="sand" className="mt-2" onClick={() => { setMobileOpen(false); scrollToReservation(); }}>
+              {t.nav.reserver}
             </Button>
           </div>
         </div>

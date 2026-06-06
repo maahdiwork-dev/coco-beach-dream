@@ -118,10 +118,11 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
 
           {/* Form */}
           <motion.div
+            id="reserver"
             initial={{ opacity: 0, x: 30 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="lg:col-span-3"
+            className="lg:col-span-3 scroll-mt-24"
           >
             {submitted ? (
               <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
