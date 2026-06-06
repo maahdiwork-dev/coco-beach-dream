@@ -17,6 +17,7 @@ const Navbar = ({ lang, setLang }: NavbarProps) => {
     { label: t.nav.accueil, href: "#accueil" },
     { label: t.nav.forfaits, href: "#forfaits" },
     { label: t.nav.supplements, href: "#supplements" },
+    { label: t.nav.menu_jour, href: "#menu-jour" },
     { label: t.nav.galerie, href: "#galerie" },
     { label: t.nav.contact, href: "#contact" },
   ];

@@ -5,6 +5,7 @@ import AboutSection from "@/components/AboutSection";
 import StatsSection from "@/components/StatsSection";
 import ForfaitsSection from "@/components/ForfaitsSection";
 import SupplementsSection from "@/components/SupplementsSection";
+import MenuJourSection from "@/components/MenuJourSection";
 import GallerySection from "@/components/GallerySection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import LocationSection from "@/components/LocationSection";
@@ -24,6 +25,7 @@ import FaqEditor from "@/components/admin/FaqEditor";
 import SiteTextEditor from "@/components/admin/SiteTextEditor";
 import HeroVideoUploader from "@/components/admin/HeroVideoUploader";
 import AboutEditor from "@/components/admin/AboutEditor";
+import MenuJourEditor from "@/components/admin/MenuJourEditor";
 import { useContent } from "@/hooks/useContent";
 
 const HERO_KEYS = ["hero_title_fr", "hero_title_ar", "hero_sub_fr", "hero_sub_ar"];
@@ -72,6 +74,13 @@ function IndexInner({ lang }: { lang: Lang }) {
         editor={<SupplementsEditor />}
       >
         <SupplementsSection lang={lang} />
+      </EditableSection>
+
+      <EditableSection
+        title="Menu du Jour"
+        editor={<MenuJourEditor />}
+      >
+        <MenuJourSection lang={lang} />
       </EditableSection>
 
       <EditableSection
