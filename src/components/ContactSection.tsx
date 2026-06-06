@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
 
-const RESERVATION_EMAIL = "vipcoucoubeach1@gmail.com";
+const RESERVATION_EMAIL = "vipcoucoubeach@gmail.com";
 
 type ContactSectionProps = {
   lang: Lang;
@@ -88,7 +88,7 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
           >
             {[
               { icon: MapPin, label: "Adresse", value: "Coco Beach, Ghar el Melh, Bizerte" },
-              { icon: Mail, label: "Email", value: "vipcoucoubeach1@gmail.com" },
+              { icon: Mail, label: "Email", value: "vipcoucoubeach@gmail.com" },
               { icon: Phone, label: "Téléphone", value: "+216 56 530 516" },
               { icon: Clock, label: "Horaires", value: "Mai – Septembre, 9h – 19h" },
             ].map((item, i) => (

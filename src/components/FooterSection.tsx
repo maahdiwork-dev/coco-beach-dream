@@ -44,7 +44,7 @@ const FooterSection = ({ lang }: FooterSectionProps) => {
           <div>
             <h4 className="font-heading font-semibold text-background mb-3 text-sm">Contact</h4>
             <p className="text-background/60 text-sm mb-1">+216 56 530 516</p>
-            <p className="text-background/60 text-sm mb-3">vipcoucoubeach1@gmail.com</p>
+            <p className="text-background/60 text-sm mb-3">vipcoucoubeach@gmail.com</p>
             <div className="flex gap-3">
               <a href="https://www.instagram.com/vipcoucoubeach/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-background/60 hover:text-background transition-colors">
                 <Instagram size={20} />
