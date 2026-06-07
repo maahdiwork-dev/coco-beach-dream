@@ -6,7 +6,7 @@ import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
 
 // Formspree endpoint — submissions are emailed to Houyem automatically.
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/xaqaobew";
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/mdavewjo";
 
 type ContactSectionProps = {
   lang: Lang;
