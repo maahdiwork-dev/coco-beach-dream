@@ -14,11 +14,11 @@ const SECTION_LABELS = {
     enfant: "MENU ENFANT",
   },
   ar: {
-    entree: "المقبلات",
-    plat: "الطبق الرئيسي (حسب الاختيار)",
-    accompagnements: "المرافقات",
-    dessert: "الحلوى",
-    enfant: "قائمة الأطفال",
+    entree: "الدخلة",
+    plat: "الطبق الرئيسي (تختار)",
+    accompagnements: "معاهم",
+    dessert: "الحلو",
+    enfant: "منيو الصغار",
   },
 } as const;
 
@@ -31,19 +31,19 @@ export const MENU_JOUR_DEFAULTS: Record<string, string> = {
   menu_jour_plat_fr:
     "Pâtes à la sauce rouge aux chevrettes\nPâtes à la sauce blanche aux escalopes de poulet\nRiz",
   menu_jour_accompagnements_fr:
-    "Tastira tunisienne\nFrites\nPoisson daurade et crevette grillé ou Escalope de poulet (grillée, panée ou en cordon bleu)",
+    "Tastira tunisienne\nFrites\nDaurade et crevette grillées ou escalope de poulet (grillée, panée ou cordon bleu)",
   menu_jour_dessert_fr: "Fruits de saison",
   menu_jour_enfant_fr: "Identique au menu adulte, sans entrée ni tastira",
 
-  // Arabic
-  menu_jour_title_ar: "قائمة اليوم",
-  menu_jour_entree_ar: "تشكيلة من السلطات المتنوعة",
+  // Arabic (derja tunisienne)
+  menu_jour_title_ar: "منيو اليوم",
+  menu_jour_entree_ar: "سلاطة متنوّعة",
   menu_jour_plat_ar:
-    "مكرونة بصلصة الطماطم مع الروبيان\nمكرونة بصلصة بيضاء مع شرائح الدجاج\nأرز",
+    "مقرونة حمراء بالكروفات\nمقرونة بيضاء بالاسكالوب\nروز",
   menu_jour_accompagnements_ar:
-    "طاجين تونسي\nبطاطا مقلية\nسمك الدنيس والروبيان المشوي أو شريحة الدجاج (مشوية أو مبرزة أو بالكريمة)",
-  menu_jour_dessert_ar: "فواكه موسمية",
-  menu_jour_enfant_ar: "مطابق لقائمة البالغين، بدون مقبلات وبدون طاجين",
+    "تسطيرة تونسية\nفريت\nدوراد وكروفات مشوي ولا اسكالوب دجاج (مشوي، باني، ولا كوردون بلو)",
+  menu_jour_dessert_ar: "غلّة موسمية",
+  menu_jour_enfant_ar: "كيف الكبار، من غير دخلة ومن غير تسطيرة",
 };
 
 // ─── Helper ────────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ export const content = {
       menu_jour: "Menu",
       galerie: "Galerie",
       contact: "Contact",
-      reserver: "Réserver Maintenant",
+      reserver: "Réserver maintenant",
     },
     supplementsTitle: "Suppléments à la Carte",
     supplementsSubtitle:
@@ -18,7 +18,7 @@ export const content = {
     heroTitle: "VIP Coco Beach — Ghar el Melh",
     heroSub:
       "Plage privée accessible uniquement en bateau — 5 min depuis parking sécurisé",
-    warning: "Pas de taxis à Ghar el Melh — réservation obligatoire",
+    warning: "Pas de taxi à Ghar El Melh, réservation obligatoire",
     forfaitsTitle: "Nos Forfaits",
     forfaitsNote:
       "Tout compris : transfert bateau, parking sécurisé, déjeuner complet",
@@ -87,13 +87,13 @@ export const content = {
   },
   ar: {
     nav: {
-      accueil: "الرئيسية",
+      accueil: "الدار",
       forfaits: "العروض",
-      supplements: "الكارت",
-      menu_jour: "القائمة",
-      galerie: "الصور",
-      contact: "اتصل",
-      reserver: "احجز الآن",
+      supplements: "زيادات",
+      menu_jour: "المنيو",
+      galerie: "تصاور",
+      contact: "كلّمنا",
+      reserver: "احجز توّا",
     },
     supplementsTitle: "الكارت الإضافية",
     supplementsSubtitle:
