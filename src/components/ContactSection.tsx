@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
 
-const RESERVATION_EMAIL = "vipcoucoubeach@gmail.com";
+// Formspree endpoint — submissions are emailed to Houyem automatically.
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xaqaobew";
 
 type ContactSectionProps = {
   lang: Lang;
@@ -21,7 +22,10 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
   // Runtime WhatsApp number — falls back to Houyem's number
   const whatsappNumber = contentData?.site_text?.whatsapp_number ?? "";
 
-  const [submitted, setSubmitted] = useState(false);
+  // submitted holds which channel succeeded: 'email' | 'wa' | null
+  const [submitted, setSubmitted] = useState<null | "email" | "wa">(null);
+  const [sending, setSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [form, setForm] = useState({
     name: "", phone: "", date: "", people: "", forfait: "", message: "",
   });
@@ -43,24 +47,46 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
     return `https://wa.me/${number}?text=${encodeURIComponent(body)}`;
   };
 
-  const buildMailto = () => {
-    const subject = `Réservation VIP Coco Beach — ${form.name || "Nouvelle demande"}`;
-    const body = `Bonjour VIP Coco Beach, je voudrais réserver :\n\n${buildLines()}`;
-    return `mailto:${RESERVATION_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
-
   // WhatsApp = native form submit (gets required-field validation for free)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     window.open(buildWaLink(), "_blank", "noopener,noreferrer");
-    setSubmitted(true);
+    setSubmitted("wa");
   };
 
-  // Email = manual path; trigger the same required-field validation first
-  const handleEmail = () => {
+  // Email = POST to Formspree → reservation is emailed to Houyem automatically.
+  const handleEmail = async () => {
     if (formRef.current && !formRef.current.reportValidity()) return;
-    window.location.href = buildMailto();
-    setSubmitted(true);
+    setSending(true);
+    setErrorMsg("");
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          Nom: form.name,
+          Téléphone: form.phone,
+          Date: form.date,
+          Personnes: form.people,
+          Forfait: form.forfait,
+          Message: form.message || "—",
+          _subject: `Réservation VIP Coco Beach — ${form.name}`,
+        }),
+      });
+      if (res.ok) {
+        setSubmitted("email");
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setErrorMsg(
+          body?.errors?.[0]?.message ??
+            "L'envoi a échoué. Réessayez ou utilisez WhatsApp."
+        );
+      }
+    } catch {
+      setErrorMsg("Problème de connexion. Réessayez ou utilisez WhatsApp.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
@@ -127,9 +153,15 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
             {submitted ? (
               <div className="card-premium p-6 md:p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
                 <div className="text-4xl">✅</div>
-                <h3 className="font-heading text-xl font-bold text-primary">Demande prête !</h3>
-                <p className="text-muted-foreground">Votre demande de réservation a été préparée. Envoyez-la pour que nous puissions la confirmer rapidement.</p>
-                <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); setSubmitted(false); }}>
+                <h3 className="font-heading text-xl font-bold text-primary">
+                  {submitted === "email" ? "Réservation envoyée !" : "WhatsApp ouvert !"}
+                </h3>
+                <p className="text-muted-foreground">
+                  {submitted === "email"
+                    ? "Votre demande a bien été envoyée. Nous vous contacterons rapidement pour confirmer."
+                    : "Votre demande a été transmise sur WhatsApp. Nous confirmerons votre réservation rapidement."}
+                </p>
+                <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); setSubmitted(null); }}>
                   Nouvelle demande
                 </Button>
               </div>
@@ -212,16 +244,19 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                   />
                 </div>
                 <div className="space-y-3 pt-1">
-                  <Button variant="sand" size="lg" type="submit" className="w-full gap-2">
+                  <Button variant="sand" size="lg" type="submit" disabled={sending} className="w-full gap-2">
                     <MessageCircle size={18} />
                     Réserver via WhatsApp
                   </Button>
-                  <Button variant="ocean" size="lg" type="button" onClick={handleEmail} className="w-full gap-2">
+                  <Button variant="ocean" size="lg" type="button" onClick={handleEmail} disabled={sending} className="w-full gap-2">
                     <Mail size={18} />
-                    Réserver via Email
+                    {sending ? "Envoi en cours…" : "Réserver via Email"}
                   </Button>
+                  {errorMsg && (
+                    <p className="text-xs text-destructive text-center">{errorMsg}</p>
+                  )}
                   <p className="text-xs text-muted-foreground text-center">
-                    Choisissez WhatsApp ou Email — votre demande s'ouvre pré-remplie, il ne reste qu'à l'envoyer.
+                    Réservez en un clic via WhatsApp, ou envoyez votre demande par Email — nous vous répondons rapidement.
                   </p>
                 </div>
               </form>
