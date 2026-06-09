@@ -17,15 +17,6 @@ import { useContent } from "@/hooks/useContent";
 // Formspree endpoint — submissions are emailed to Houyem automatically.
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/mdavewjo";
 
-// Capacity rules (min/max adults) matched by forfait slug. Names + prices come
-// LIVE from the DB (so they're always accurate + editable in the admin).
-const FORFAIT_RULES: Record<string, { min: number; max: number | null }> = {
-  parasol: { min: 1, max: 4 },
-  cabane: { min: 4, max: null },
-  "cabane-golden-vip": { min: 5, max: null },
-  paillote: { min: 5, max: null },
-  "paillote-premiere": { min: 5, max: null },
-};
 
 type ContactSectionProps = {
   lang: Lang;
@@ -54,18 +45,15 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
   const [emailPhone, setEmailPhone] = useState("");
   const [modalPhoneError, setModalPhoneError] = useState("");
 
-  // Forfait options: names + prices LIVE from the DB, capacity rules by slug.
+  // Forfait options: names + prices + capacity rules all LIVE from the DB.
   type ForfaitOpt = { slug: string; name: string; price: string; min: number; max: number | null };
-  const forfaitOptions: ForfaitOpt[] = (contentData?.forfaits ?? []).map((f) => {
-    const rule = FORFAIT_RULES[f.slug] ?? { min: 1, max: null };
-    return {
-      slug: f.slug,
-      name: lang === "ar" ? (f.name_ar || f.name_fr) : f.name_fr,
-      price: lang === "ar" ? (f.price_ar || f.price_fr) : f.price_fr,
-      min: rule.min,
-      max: rule.max,
-    };
-  });
+  const forfaitOptions: ForfaitOpt[] = (contentData?.forfaits ?? []).map((f) => ({
+    slug: f.slug,
+    name: lang === "ar" ? (f.name_ar || f.name_fr) : f.name_fr,
+    price: lang === "ar" ? (f.price_ar || f.price_fr) : f.price_fr,
+    min: f.min_adults ?? 1,
+    max: f.max_adults ?? null,
+  }));
 
   const isForfaitAvailable = (opt: ForfaitOpt) => {
     const adults = Number(form.adults);
@@ -325,17 +313,32 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                     className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Choisir un forfait</option>
-                    {forfaitOptions.map((opt) => {
-                      const avail = isForfaitAvailable(opt);
-                      const label = avail
-                        ? `${opt.name} — ${opt.price}`
-                        : `${opt.name} — ${opt.price}  🔒 ${forfaitLockReason(opt)}`;
+                    {(() => {
+                      const available = forfaitOptions.filter((opt) => isForfaitAvailable(opt));
+                      const locked = forfaitOptions.filter((opt) => !isForfaitAvailable(opt));
                       return (
-                        <option key={opt.slug} value={opt.name} disabled={!avail}>
-                          {label}
-                        </option>
+                        <>
+                          {available.length > 0 && (
+                            <optgroup label="Disponibles pour votre groupe">
+                              {available.map((opt) => (
+                                <option key={opt.slug} value={opt.name}>
+                                  {`${opt.name} — ${opt.price}`}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {locked.length > 0 && (
+                            <optgroup label="Pour groupes plus grands">
+                              {locked.map((opt) => (
+                                <option key={opt.slug} value={opt.name} disabled>
+                                  {`${opt.name} — ${opt.price}  🔒 ${forfaitLockReason(opt)}`}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </>
                       );
-                    })}
+                    })()}
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
                     Les options dépendent du nombre d'adultes.

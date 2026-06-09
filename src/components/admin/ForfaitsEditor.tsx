@@ -31,6 +31,8 @@ const forfaitSchema = z.object({
   items_fr: z.string().min(1, "Requis"),
   items_ar: z.string().optional().default(""),
   active: z.boolean(),
+  min_adults: z.coerce.number().int().min(1).default(1),
+  max_adults: z.union([z.coerce.number().int().min(1), z.literal("")]).optional(),
 });
 
 type FormData = z.infer<typeof forfaitSchema>;
@@ -55,6 +57,8 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
       items_fr: (forfait.items_fr ?? []).join("\n"),
       items_ar: (forfait.items_ar ?? []).join("\n"),
       active: forfait.active,
+      min_adults: forfait.min_adults ?? 1,
+      max_adults: forfait.max_adults ?? "",
     },
   });
 
@@ -75,6 +79,8 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
           items_fr: values.items_fr.split("\n").map((s) => s.trim()).filter(Boolean),
           items_ar: values.items_ar.split("\n").map((s) => s.trim()).filter(Boolean),
           active: values.active,
+          min_adults: values.min_adults,
+          max_adults: values.max_adults === "" || values.max_adults == null ? null : Number(values.max_adults),
         }),
       });
       if (res.ok) {
@@ -157,7 +163,18 @@ function ForfaitRow({ forfait, onUpdated }: { forfait: Forfait; onUpdated: () =>
               <Textarea {...register("items_ar")} rows={4} dir="rtl" />
               {errors.items_ar && <p className="text-xs text-destructive">{errors.items_ar.message}</p>}
             </div>
+            <div className="space-y-1">
+              <Label>Nombre d'adultes minimum</Label>
+              <Input {...register("min_adults")} type="number" min={1} />
+              {errors.min_adults && <p className="text-xs text-destructive">{errors.min_adults.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label>Nombre d'adultes maximum <span className="text-muted-foreground font-normal">(vide = illimité)</span></Label>
+              <Input {...register("max_adults")} type="number" min={1} placeholder="illimité" />
+              {errors.max_adults && <p className="text-xs text-destructive">{errors.max_adults.message}</p>}
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">Ces règles décident quel forfait est disponible selon le nombre d'adultes choisi par le client.</p>
 
           <div className="flex items-center gap-2">
             <Switch
@@ -253,6 +270,8 @@ export default function ForfaitsEditor() {
           items_fr: values.items_fr.split("\n").map((s) => s.trim()).filter(Boolean),
           items_ar: values.items_ar.split("\n").map((s) => s.trim()).filter(Boolean),
           active: values.active,
+          min_adults: values.min_adults,
+          max_adults: values.max_adults === "" || values.max_adults == null ? null : Number(values.max_adults),
         }),
       });
       if (res.ok) {
@@ -347,7 +366,18 @@ export default function ForfaitsEditor() {
                 <Textarea {...addReg("items_ar")} rows={4} dir="rtl" />
                 {addErrors.items_ar && <p className="text-xs text-destructive">{addErrors.items_ar.message}</p>}
               </div>
+              <div className="space-y-1">
+                <Label>Nombre d'adultes minimum</Label>
+                <Input {...addReg("min_adults")} type="number" min={1} defaultValue={1} />
+                {addErrors.min_adults && <p className="text-xs text-destructive">{addErrors.min_adults.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Label>Nombre d'adultes maximum <span className="text-muted-foreground font-normal">(vide = illimité)</span></Label>
+                <Input {...addReg("max_adults")} type="number" min={1} placeholder="illimité" />
+                {addErrors.max_adults && <p className="text-xs text-destructive">{addErrors.max_adults.message}</p>}
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">Ces règles décident quel forfait est disponible selon le nombre d'adultes choisi par le client.</p>
             <div className="flex items-center gap-3">
               <Button type="submit" size="sm" disabled={adding}>
                 {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}

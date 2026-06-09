@@ -16,6 +16,8 @@ const createSchema = z.object({
   items_fr: z.array(z.string()).min(1),
   items_ar: z.array(z.string()).optional().default([]),
   active: z.boolean().optional().default(true),
+  min_adults: z.number().int().min(1).optional().default(1),
+  max_adults: z.number().int().min(1).nullable().optional().default(null),
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
