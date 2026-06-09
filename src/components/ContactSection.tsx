@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { MapPin, Mail, Phone, Clock, Instagram, MessageCircle, Lock, Check } from "lucide-react";
+import { MapPin, Mail, Phone, Clock, Instagram, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,12 +17,14 @@ import { useContent } from "@/hooks/useContent";
 // Formspree endpoint — submissions are emailed to Houyem automatically.
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/mdavewjo";
 
-const FORFAIT_OPTIONS = [
-  { name: "Parasol", price: "70 DT / pers.", min: 1, max: 4 },
-  { name: "Cabane Sable", price: "70 DT / pers.", min: 4, max: null },
-  { name: "Paillote", price: "80 DT / pers.", min: 5, max: null },
-  { name: "Paillote VIP 1ère Position", price: "85 DT / pers.", min: 5, max: null },
-] as const;
+// Capacity rules (min/max adults) matched by forfait slug. Names + prices come
+// LIVE from the DB (so they're always accurate + editable in the admin).
+const FORFAIT_RULES: Record<string, { min: number; max: number | null }> = {
+  parasol: { min: 1, max: 4 },
+  cabane: { min: 4, max: null },
+  paillote: { min: 5, max: null },
+  "paillote-premiere": { min: 5, max: null },
+};
 
 type ContactSectionProps = {
   lang: Lang;
@@ -51,29 +53,40 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
   const [emailPhone, setEmailPhone] = useState("");
   const [modalPhoneError, setModalPhoneError] = useState("");
 
-  // Auto-clear forfait when adults count makes it unavailable
-  useEffect(() => {
-    if (!form.forfait) return;
-    const adults = Number(form.adults);
-    const option = FORFAIT_OPTIONS.find((o) => o.name === form.forfait);
-    if (!option) return;
-    const available = adults >= option.min && (option.max === null || adults <= option.max);
-    if (!available) {
-      setForm((p) => ({ ...p, forfait: "" }));
-    }
-  }, [form.adults]);
+  // Forfait options: names + prices LIVE from the DB, capacity rules by slug.
+  type ForfaitOpt = { slug: string; name: string; price: string; min: number; max: number | null };
+  const forfaitOptions: ForfaitOpt[] = (contentData?.forfaits ?? []).map((f) => {
+    const rule = FORFAIT_RULES[f.slug] ?? { min: 1, max: null };
+    return {
+      slug: f.slug,
+      name: lang === "ar" ? (f.name_ar || f.name_fr) : f.name_fr,
+      price: lang === "ar" ? (f.price_ar || f.price_fr) : f.price_fr,
+      min: rule.min,
+      max: rule.max,
+    };
+  });
 
-  const isForfaitAvailable = (option: typeof FORFAIT_OPTIONS[number]) => {
+  const isForfaitAvailable = (opt: ForfaitOpt) => {
     const adults = Number(form.adults);
-    return adults >= option.min && (option.max === null || adults <= option.max);
+    return adults >= opt.min && (opt.max === null || adults <= opt.max);
   };
 
-  const forfaitLockReason = (option: typeof FORFAIT_OPTIONS[number]) => {
+  const forfaitLockReason = (opt: ForfaitOpt) => {
     const adults = Number(form.adults);
-    if (adults < option.min) return `À partir de ${option.min} adulte${option.min > 1 ? "s" : ""}`;
-    if (option.max !== null && adults > option.max) return `Jusqu'à ${option.max} adulte${option.max > 1 ? "s" : ""}`;
+    if (adults < opt.min) return `à partir de ${opt.min} adulte${opt.min > 1 ? "s" : ""}`;
+    if (opt.max !== null && adults > opt.max) return `jusqu'à ${opt.max} adulte${opt.max > 1 ? "s" : ""}`;
     return "";
   };
+
+  // Auto-clear forfait when the adults count makes the current selection unavailable
+  useEffect(() => {
+    if (!form.forfait) return;
+    const opt = forfaitOptions.find((o) => o.name === form.forfait);
+    if (opt && !isForfaitAvailable(opt)) {
+      setForm((p) => ({ ...p, forfait: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.adults, contentData]);
 
   const buildWaLink = () => {
     const lines = [
@@ -301,66 +314,31 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                   </div>
                 </div>
 
-                {/* Forfait cards */}
+                {/* Forfait — dropdown; locked options greyed by group size, prices from DB */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Forfait</label>
-                  <div className="space-y-2">
-                    {FORFAIT_OPTIONS.map((option) => {
-                      const available = isForfaitAvailable(option);
-                      const selected = form.forfait === option.name;
-                      const lockReason = !available ? forfaitLockReason(option) : "";
-
+                  <label className="text-sm font-medium text-foreground mb-1 block">Forfait</label>
+                  <select
+                    required
+                    value={form.forfait}
+                    onChange={(e) => update("forfait", e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="">Choisir un forfait</option>
+                    {forfaitOptions.map((opt) => {
+                      const avail = isForfaitAvailable(opt);
+                      const label = avail
+                        ? `${opt.name} — ${opt.price}`
+                        : `${opt.name} — ${opt.price}  🔒 ${forfaitLockReason(opt)}`;
                       return (
-                        <div
-                          key={option.name}
-                          onClick={() => available && update("forfait", option.name)}
-                          className={[
-                            "flex items-center justify-between rounded-xl border px-4 py-3 transition-all",
-                            available
-                              ? "cursor-pointer hover:border-primary/50"
-                              : "opacity-50 cursor-not-allowed",
-                            selected
-                              ? "border-2 bg-primary/5"
-                              : "border-border bg-background",
-                          ].join(" ")}
-                          style={selected ? { borderColor: "#0a3d62" } : {}}
-                          role={available ? "button" : undefined}
-                          tabIndex={available ? 0 : undefined}
-                          onKeyDown={(e) => {
-                            if (available && (e.key === "Enter" || e.key === " ")) {
-                              e.preventDefault();
-                              update("forfait", option.name);
-                            }
-                          }}
-                          aria-pressed={selected}
-                          aria-disabled={!available}
-                        >
-                          <div className="flex items-center gap-3">
-                            {available ? (
-                              <div
-                                className={[
-                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                                  selected ? "bg-primary border-primary" : "border-muted-foreground/40",
-                                ].join(" ")}
-                                style={selected ? { backgroundColor: "#0a3d62", borderColor: "#0a3d62" } : {}}
-                              >
-                                {selected && <Check size={12} className="text-white" strokeWidth={3} />}
-                              </div>
-                            ) : (
-                              <Lock size={16} className="text-muted-foreground shrink-0" />
-                            )}
-                            <div>
-                              <p className="text-sm font-semibold text-foreground">{option.name}</p>
-                              {!available && lockReason && (
-                                <p className="text-xs text-destructive mt-0.5">{lockReason}</p>
-                              )}
-                            </div>
-                          </div>
-                          <span className="text-sm text-muted-foreground ml-4 shrink-0">{option.price}</span>
-                        </div>
+                        <option key={opt.slug} value={opt.name} disabled={!avail}>
+                          {label}
+                        </option>
                       );
                     })}
-                  </div>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Les options dépendent du nombre d'adultes.
+                  </p>
                 </div>
 
                 {/* Message */}
