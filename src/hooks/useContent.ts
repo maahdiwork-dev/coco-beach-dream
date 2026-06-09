@@ -11,8 +11,6 @@ export interface Forfait {
   items_fr: string[];
   items_ar: string[];
   active: boolean;
-  min_adults: number;
-  max_adults: number | null;
   created_at: string;
   updated_at: string;
 }

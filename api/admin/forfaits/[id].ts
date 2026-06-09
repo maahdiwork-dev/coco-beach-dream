@@ -17,8 +17,6 @@ const patchSchema = z.object({
   items_fr: z.array(z.string()).min(1).optional(),
   items_ar: z.array(z.string()).optional(),
   active: z.boolean().optional(),
-  min_adults: z.number().int().min(1).optional(),
-  max_adults: z.number().int().min(1).nullable().optional(),
 }).strict();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
