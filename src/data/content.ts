@@ -54,7 +54,7 @@ export const content = {
         ],
       },
       {
-        name: "Paillote 1ère Position",
+        name: "Paillote VIP 1ère Position",
         price: "85 DT / pers.",
         items: [
           "Transfert aller-retour bateau",

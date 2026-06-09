@@ -1,12 +1,28 @@
 import { motion, useInView } from "framer-motion";
-import { useRef, useState } from "react";
-import { MapPin, Mail, Phone, Clock, Instagram, MessageCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MapPin, Mail, Phone, Clock, Instagram, MessageCircle, Lock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { content, type Lang } from "@/data/content";
 import { useContent } from "@/hooks/useContent";
 
 // Formspree endpoint — submissions are emailed to Houyem automatically.
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/mdavewjo";
+
+const FORFAIT_OPTIONS = [
+  { name: "Parasol", price: "70 DT / pers.", min: 1, max: 4 },
+  { name: "Cabane Sable", price: "70 DT / pers.", min: 4, max: null },
+  { name: "Paillote", price: "80 DT / pers.", min: 5, max: null },
+  { name: "Paillote VIP 1ère Position", price: "85 DT / pers.", min: 5, max: null },
+] as const;
 
 type ContactSectionProps = {
   lang: Lang;
@@ -27,36 +43,85 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
   const [sending, setSending] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [form, setForm] = useState({
-    name: "", phone: "", date: "", people: "", forfait: "", message: "",
+    name: "", date: "", adults: "2", enfants: "0", forfait: "", message: "",
   });
 
-  const buildLines = () =>
-    [
+  // Email phone modal state
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailPhone, setEmailPhone] = useState("");
+  const [modalPhoneError, setModalPhoneError] = useState("");
+
+  // Auto-clear forfait when adults count makes it unavailable
+  useEffect(() => {
+    if (!form.forfait) return;
+    const adults = Number(form.adults);
+    const option = FORFAIT_OPTIONS.find((o) => o.name === form.forfait);
+    if (!option) return;
+    const available = adults >= option.min && (option.max === null || adults <= option.max);
+    if (!available) {
+      setForm((p) => ({ ...p, forfait: "" }));
+    }
+  }, [form.adults]);
+
+  const isForfaitAvailable = (option: typeof FORFAIT_OPTIONS[number]) => {
+    const adults = Number(form.adults);
+    return adults >= option.min && (option.max === null || adults <= option.max);
+  };
+
+  const forfaitLockReason = (option: typeof FORFAIT_OPTIONS[number]) => {
+    const adults = Number(form.adults);
+    if (adults < option.min) return `À partir de ${option.min} adulte${option.min > 1 ? "s" : ""}`;
+    if (option.max !== null && adults > option.max) return `Jusqu'à ${option.max} adulte${option.max > 1 ? "s" : ""}`;
+    return "";
+  };
+
+  const buildWaLink = () => {
+    const lines = [
       form.name    && `👤 Nom : ${form.name}`,
-      form.phone   && `📞 Téléphone : ${form.phone}`,
       form.date    && `📅 Date : ${form.date}`,
-      form.people  && `👥 Personnes : ${form.people}`,
+      `👥 Adultes : ${form.adults}`,
+      Number(form.enfants) > 0 && `👶 Enfants : ${form.enfants}`,
       form.forfait && `🏖️ Forfait : ${form.forfait}`,
       form.message && `💬 Message : ${form.message}`,
     ].filter(Boolean).join("\n");
 
-  const buildWaLink = () => {
-    const body = `Bonjour VIP Coco Beach, je voudrais réserver :\n${buildLines()}`;
+    const body = `Bonjour VIP Coco Beach, je voudrais réserver :\n${lines}`;
     const cleanNumber = whatsappNumber.replace(/[^0-9+]/g, "");
     const number = cleanNumber || "21656530516";
     return `https://wa.me/${number}?text=${encodeURIComponent(body)}`;
   };
 
+  const validateForm = () => {
+    if (formRef.current && !formRef.current.reportValidity()) return false;
+    if (!form.forfait) {
+      setErrorMsg("Choisissez un forfait.");
+      return false;
+    }
+    return true;
+  };
+
   // WhatsApp = native form submit (gets required-field validation for free)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     window.open(buildWaLink(), "_blank", "noopener,noreferrer");
     setSubmitted("wa");
   };
 
-  // Email = POST to Formspree → reservation is emailed to Houyem automatically.
-  const handleEmail = async () => {
-    if (formRef.current && !formRef.current.reportValidity()) return;
+  // Email = open modal to collect phone, then POST to Formspree
+  const handleEmail = () => {
+    if (!validateForm()) return;
+    setEmailPhone("");
+    setModalPhoneError("");
+    setEmailModalOpen(true);
+  };
+
+  const handleModalConfirm = async () => {
+    if (!emailPhone.trim()) {
+      setModalPhoneError("Veuillez entrer votre numéro de téléphone.");
+      return;
+    }
+    setEmailModalOpen(false);
     setSending(true);
     setErrorMsg("");
     try {
@@ -65,9 +130,10 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           Nom: form.name,
-          Téléphone: form.phone,
+          Téléphone: emailPhone,
           Date: form.date,
-          Personnes: form.people,
+          Adultes: form.adults,
+          Enfants: form.enfants,
           Forfait: form.forfait,
           Message: form.message || "—",
           _subject: `Réservation VIP Coco Beach — ${form.name}`,
@@ -89,7 +155,17 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
     }
   };
 
-  const update = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+  const update = (key: string, value: string) => {
+    setErrorMsg("");
+    setForm((p) => ({ ...p, [key]: value }));
+  };
+
+  const resetForm = () => {
+    setForm({ name: "", date: "", adults: "2", enfants: "0", forfait: "", message: "" });
+    setSubmitted(null);
+    setErrorMsg("");
+    setEmailPhone("");
+  };
 
   return (
     <section id="contact" className="section-padding bg-warm-cream" ref={ref}>
@@ -161,37 +237,26 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                     ? "Votre demande a bien été envoyée. Nous vous contacterons rapidement pour confirmer."
                     : "Votre demande a été transmise sur WhatsApp. Nous confirmerons votre réservation rapidement."}
                 </p>
-                <Button variant="ocean" onClick={() => { setForm({ name: "", phone: "", date: "", people: "", forfait: "", message: "" }); setSubmitted(null); }}>
+                <Button variant="ocean" onClick={resetForm}>
                   Nouvelle demande
                 </Button>
               </div>
             ) : (
               <form ref={formRef} onSubmit={handleSubmit} className="card-premium p-6 md:p-8 space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Nom complet</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={100}
-                      value={form.name}
-                      onChange={(e) => update("name", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Téléphone</label>
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      required
-                      maxLength={20}
-                      value={form.phone}
-                      onChange={(e) => update("phone", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
+                {/* Row 1 — Nom complet (full width) */}
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Nom complet</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={100}
+                    value={form.name}
+                    onChange={(e) => update("name", e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
                 </div>
+
+                {/* Row 2 — Date + Adultes */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-foreground mb-1 block">Date souhaitée</label>
@@ -204,35 +269,101 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Nombre de personnes</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
+                    <label className="text-sm font-medium text-foreground mb-1 block">Nombre d'adultes</label>
+                    <select
                       required
-                      min={1}
-                      max={50}
-                      value={form.people}
-                      onChange={(e) => update("people", e.target.value)}
+                      value={form.adults}
+                      onChange={(e) => update("adults", e.target.value)}
                       className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
+                    >
+                      {Array.from({ length: 15 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={String(n)}>{n}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">Forfait</label>
-                  <select
-                    required
-                    value={form.forfait}
-                    onChange={(e) => update("forfait", e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    <option value="">Choisir un forfait</option>
-                    {t.packages.map((packageItem) => (
-                      <option key={packageItem.name} value={packageItem.name}>
-                        {packageItem.name} — {packageItem.price}
-                      </option>
-                    ))}
-                  </select>
+
+                {/* Row 3 — Enfants */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      Nombre d'enfants <span className="text-muted-foreground font-normal">(optionnel)</span>
+                    </label>
+                    <select
+                      value={form.enfants}
+                      onChange={(e) => update("enfants", e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      {Array.from({ length: 16 }, (_, i) => i).map((n) => (
+                        <option key={n} value={String(n)}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
+                {/* Forfait cards */}
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Forfait</label>
+                  <div className="space-y-2">
+                    {FORFAIT_OPTIONS.map((option) => {
+                      const available = isForfaitAvailable(option);
+                      const selected = form.forfait === option.name;
+                      const lockReason = !available ? forfaitLockReason(option) : "";
+
+                      return (
+                        <div
+                          key={option.name}
+                          onClick={() => available && update("forfait", option.name)}
+                          className={[
+                            "flex items-center justify-between rounded-xl border px-4 py-3 transition-all",
+                            available
+                              ? "cursor-pointer hover:border-primary/50"
+                              : "opacity-50 cursor-not-allowed",
+                            selected
+                              ? "border-2 bg-primary/5"
+                              : "border-border bg-background",
+                          ].join(" ")}
+                          style={selected ? { borderColor: "#0a3d62" } : {}}
+                          role={available ? "button" : undefined}
+                          tabIndex={available ? 0 : undefined}
+                          onKeyDown={(e) => {
+                            if (available && (e.key === "Enter" || e.key === " ")) {
+                              e.preventDefault();
+                              update("forfait", option.name);
+                            }
+                          }}
+                          aria-pressed={selected}
+                          aria-disabled={!available}
+                        >
+                          <div className="flex items-center gap-3">
+                            {available ? (
+                              <div
+                                className={[
+                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                                  selected ? "bg-primary border-primary" : "border-muted-foreground/40",
+                                ].join(" ")}
+                                style={selected ? { backgroundColor: "#0a3d62", borderColor: "#0a3d62" } : {}}
+                              >
+                                {selected && <Check size={12} className="text-white" strokeWidth={3} />}
+                              </div>
+                            ) : (
+                              <Lock size={16} className="text-muted-foreground shrink-0" />
+                            )}
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{option.name}</p>
+                              {!available && lockReason && (
+                                <p className="text-xs text-destructive mt-0.5">{lockReason}</p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-sm text-muted-foreground ml-4 shrink-0">{option.price}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Message */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">Message (optionnel)</label>
                   <textarea
@@ -243,6 +374,8 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
                     className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                   />
                 </div>
+
+                {/* Submit buttons */}
                 <div className="space-y-3 pt-1">
                   <Button variant="sand" size="lg" type="submit" disabled={sending} className="w-full gap-2">
                     <MessageCircle size={18} />
@@ -264,6 +397,61 @@ const ContactSection = ({ lang }: ContactSectionProps) => {
           </motion.div>
         </div>
       </div>
+
+      {/* Email phone modal */}
+      <Dialog open={emailModalOpen} onOpenChange={(open) => { if (!open) setEmailModalOpen(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Votre numéro de téléphone</DialogTitle>
+            <DialogDescription>
+              Pour confirmer votre réservation, laissez-nous votre numéro.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="modal-phone">Numéro de téléphone</Label>
+              <Input
+                id="modal-phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="+216 XX XXX XXX"
+                value={emailPhone}
+                onChange={(e) => {
+                  setEmailPhone(e.target.value);
+                  if (modalPhoneError) setModalPhoneError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleModalConfirm();
+                  }
+                }}
+                autoFocus
+              />
+              {modalPhoneError && (
+                <p className="text-xs text-destructive">{modalPhoneError}</p>
+              )}
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setEmailModalOpen(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="ocean"
+                onClick={handleModalConfirm}
+                disabled={sending}
+                className="gap-2"
+              >
+                <Mail size={16} />
+                Envoyer ma demande
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
