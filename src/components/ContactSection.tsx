@@ -22,6 +22,7 @@ const FORMSPREE_ENDPOINT = "https://formspree.io/f/mdavewjo";
 const FORFAIT_RULES: Record<string, { min: number; max: number | null }> = {
   parasol: { min: 1, max: 4 },
   cabane: { min: 4, max: null },
+  "cabane-golden-vip": { min: 5, max: null },
   paillote: { min: 5, max: null },
   "paillote-premiere": { min: 5, max: null },
 };

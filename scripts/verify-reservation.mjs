@@ -4,7 +4,8 @@ const URL = process.env.SITE_URL || "https://vipcocobeach.com";
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } }); // phone-size
-await page.goto(URL, { waitUntil: "networkidle" });
+await page.goto(URL, { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(3500); // let React render + content load
 
 // Scroll the reservation form into view
 await page.evaluate(() => document.getElementById("reserver")?.scrollIntoView());
@@ -22,31 +23,16 @@ async function setAdults(n) {
   await page.waitForTimeout(400);
 }
 
-// Helper: read forfait cards — name + whether locked (lock reason text present)
+// Helper: read the Forfait <select> options — label + disabled state
 async function readForfaits() {
   return await page.evaluate(() => {
-    const names = ["Parasol", "Cabane Sable", "Paillote VIP 1ère Position", "Paillote"];
-    const region = document.getElementById("reserver");
-    const text = region.innerText;
-    // crude per-card detection: find each name's line and look for a lock reason nearby
-    const out = {};
-    const lockPhrases = ["À partir de", "Jusqu'à"];
-    // walk elements containing exactly a forfait name
-    const cards = [...region.querySelectorAll("button, div, label")].filter((el) => {
-      const t = (el.innerText || "").trim();
-      return names.some((n) => t.includes(n)) && t.length < 120;
-    });
-    for (const n of names) {
-      const card = cards.find((c) => c.innerText.includes(n));
-      if (!card) { out[n] = "NOT FOUND"; continue; }
-      const t = card.innerText.replace(/\n/g, " ");
-      const locked = lockPhrases.some((p) => t.includes(p)) ||
-        card.getAttribute("aria-disabled") === "true" ||
-        getComputedStyle(card).pointerEvents === "none" ||
-        parseFloat(getComputedStyle(card).opacity) < 0.7;
-      out[n] = locked ? `LOCKED — "${t}"` : `available — "${t}"`;
-    }
-    return out;
+    const selects = [...document.getElementById("reserver").querySelectorAll("select")];
+    // the forfait select is the one whose options mention "DT"
+    const forfaitSel = selects.find((s) => [...s.options].some((o) => /DT/.test(o.text)));
+    if (!forfaitSel) return { error: "forfait select not found" };
+    return [...forfaitSel.options]
+      .filter((o) => o.value !== "")
+      .map((o) => `${o.disabled ? "LOCKED  " : "OK      "}${o.text.trim()}`);
   });
 }
 

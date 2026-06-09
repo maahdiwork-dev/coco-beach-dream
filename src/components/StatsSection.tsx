@@ -8,7 +8,7 @@ type StatsSectionProps = {
 
 const getStats = (lang: Lang) => [
   { value: "4.6★", label: content[lang].rating },
-  { value: "4", label: "Forfaits disponibles" },
+  { value: "5", label: "Forfaits disponibles" },
   { value: "1", label: "Plage privée" },
   { value: "100%", label: "Satisfaction" },
 ];

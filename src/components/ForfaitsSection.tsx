@@ -1,12 +1,12 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Umbrella, Home, Star, Ship, Car, UtensilsCrossed } from "lucide-react";
+import { Umbrella, Home, Star, Ship, Car, UtensilsCrossed, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { content, type Lang } from "@/data/content";
 import { scrollToReservation } from "@/lib/scroll";
 import { useContent, type Forfait } from "@/hooks/useContent";
 
-const icons = [Umbrella, Home, Home, Star];
+const icons = [Umbrella, Home, Crown, Home, Star];
 const itemIcons = [Ship, Car, UtensilsCrossed, Star];
 
 type ForfaitsSectionProps = {
